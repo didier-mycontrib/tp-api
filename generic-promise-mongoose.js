@@ -28,7 +28,12 @@ function findByIdWithModel(id,PersistentModel) {
       let  persistentEntity = new PersistentModel(entity);
       persistentEntity.save()
                   .then((savedEntity)=>{ entity.id = savedEntity.id;  resolve(entity);  })
-                  .catch((err)=>{ reject({error : "cannot insert in database" , cause : err}); }  );
+                  .catch((err)=>{ 
+                    if(err && err.code == 11000)
+                      reject({ error : "CONFLICT" , reason : "existing entity with same id"  });
+                    else
+                      reject({error : "cannot insert in database" , cause : err});
+                   }  );
     });
   }
   

@@ -46,6 +46,12 @@ app.use(verifAuth.checkScopeForPrivatePath); //with OAuth2 autorization server (
 app.use(productApiRoutes.apiRouter);
 app.use(deviseApiRoutes.apiRouter);
 
+// POST traitements generiques
+
+app.all("/*", function( req , res  , next ){
+  res.status(400).send(); //BAD_REQUEST if no route match
+})
+
 
 let backendPort = process.env.PORT || 8233; 
 app.listen(backendPort , function () {

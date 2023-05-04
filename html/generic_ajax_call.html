@@ -1,0 +1,34 @@
+<html>
+<head>
+	<title>generic_ajax_call</title>
+	<script src="js/my_ajax_util.js"></script>
+	<script src="js/generic_ajax_call.js"></script>
+</head>
+<body>
+    <h3>generic_ajax_call  <a href="" target="_blank">[new-tab]</a></h3>
+	<form>
+		<label>mode:</label><select id="selMode">
+			<option>GET</option>
+			<option>POST</option>
+			<option>PUT</option>
+			<option>DELETE</option>
+		</select><br/><br/>
+		<label>api_url + "/" + ws_end_url: </label><br/>
+		<input type="text" id="txtApiUrl" size="60" />/<input type="text" id="txtWsEndUrl" size="51"/><br/><br/>
+		<label>jsonData (for POST or PUT):</label><br/><textarea rows="3" cols="100" id="txtJsonData"></textarea><br/>
+	    <input type="button" id="btnSend" value="send" /><br/>
+	</form>
+	<hr/>
+	<i>Response (status=<span id="spanStatus">?</span>) :</i><br/>
+	<span id="spanResponse"></span>
+	<hr/>
+	<a href="index.html">retour vers index</a>
+	<hr/>
+	api_url example: <input value="http://localhost:8233/devise-api/public" size="50"/> <br/>
+	<input value="http://localhost:8233/product-api/public" size="50"/> <br/>
+	ws_end_url examples: <input value="devise" size="12"/> &nbsp; <input value="devise/EUR" size="12"/>&nbsp; <input value="devise/mxy?v=true" size="16"/>  <br/>
+	<input value="product" size="12"/> &nbsp; <input value="product?minPrice=2" size="18"/>&nbsp; <input value="product/618d53514e0720e69e2e54c8?v=true" size="42"/>  <br/>
+	jsonData example:  <input value='{ "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 }' size="80"/> <br/>
+	   <input value='{ "label" : "productXy" , "price" : 12.3 }' size="80"/> <br/>
+</body>
+</html>

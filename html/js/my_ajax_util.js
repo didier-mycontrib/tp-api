@@ -2,12 +2,13 @@
 function registerCallbacks(xhr,callback,errCallback) {
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4){
-			if((xhr.status == 200 || xhr.status == 0)) {
-				callback(xhr.responseText);
+			if((xhr.status == 200 || xhr.status == 204 ||  xhr.status == 201)) {
+				//200: OK , 201: created (after good POST) , 204 : NoContent after good delete
+				callback(xhr.responseText,xhr.status);
 			}
 			else {
 				if(errCallback)
-				     errCallback(xhr.responseText);
+				     errCallback(xhr.responseText,xhr.status);
 			}
 		}
 	};

@@ -1,22 +1,11 @@
 import express from 'express';
 const apiRouter = express.Router();
 
+import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import productDao from './product-dao-mongoose.js';
 var PersistentproductModel = productDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
 
 
-function statusCodeFromEx(ex){
-	let status = 500;
-	let error = ex?ex.error:null ; 
-	switch(error){
-		case "BAD_REQUEST" : status = 400; break;
-		case "NOT_FOUND" : status = 404; break;
-		//...
-		case "CONFLICT" : status = 409; break;
-		default: status = 500;
-	}
-	return status;
-}
 
 /*
 Nouvelle convention d'URL :
@@ -25,6 +14,10 @@ http://localhost:8233/product-api/public/xyz en accès public (sans auth nécess
 
 NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private pour tout le reste
     ICI Exceptionnellement EN TP , presques toutes les URLS sont doublées : appelables en public et private
+
+NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent" quand tout se passe bien
+     via l'option facultative ?v=true (au sens verbose=true) la réponse sera 200/OK accompagné
+     d'un message json
 */
 
 
@@ -45,9 +38,9 @@ apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ])
 //exemple URL: http://localhost:8233/product-api/public/product/618d53514e0720e69e2e54c8
 apiRouter.route('/product-api/public/product/:id')
 .get( async function(req , res  , next ) {
-	var idproduct = req.params.id;
+	var entityId = req.params.id;
 	try{
-		let product = await productDao.findById( idproduct);
+		let product = await productDao.findById( entityId);
 		res.send(product);
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
@@ -55,13 +48,13 @@ apiRouter.route('/product-api/public/product/:id')
 });
 
 // exemple URL: http://localhost:8233/product-api/public/product
-// returning all products if no ?prixMini
-// http://localhost:8233/product-api/public/product?prixMini=1.05
+// returning all products if no ?minPrice
+// http://localhost:8233/product-api/public/product?minPrice=1.05
 apiRouter.route('/product-api/public/product')
 .get( async function(req , res  , next ) {
-	var prixMini = req.query.prixMini;
+	let minPrice = req.query.minPrice;
 	//var criteria=title?{ title: title }:{};
-	var criteria=prixMini?{ price: { $gte : prixMini } }:{};
+	let criteria=minPrice?{ price: { $gte : minPrice } }:{};
 	try{
 		let products = await productDao.findByCriteria(criteria);
 		res.send(products);
@@ -77,11 +70,17 @@ apiRouter.route('/product-api/public/product')
 apiRouter.route([ '/product-api/private/product',
                   '/product-api/public/product'])
 .post(async function(req , res  , next ) {
-	var nouveauproduct = req.body;
-	console.log("POST,nouveauproduct="+JSON.stringify(nouveauproduct));
+	let newEntity = req.body;
+	console.log("POST,newEntity="+JSON.stringify(newEntity));
+	if(nullOrEmptyObject(newEntity)) { res.status(400).send(); return; } //BAD REQUEST
 	try{
-		let savedproduct = await productDao.save(nouveauproduct);
-		res.send(savedproduct);
+		let savedEntity = await productDao.save(newEntity);
+		let id = newEntity.id ; //saved id (sometimes auto_incr id)
+		//NB: res.location('/devise/' + id) because some clients may send two calls:
+		//1. a post call to create new resource on server
+		//   the server respond 201 with Location: /devise/mxy in http response header
+		//2. the client may send a get request with /devise/mxy at url end to retreive full entity value
+		res.location('/product/' + id).status(201).send(savedEntity);//201: successfully created
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }
@@ -90,15 +89,30 @@ apiRouter.route([ '/product-api/private/product',
 
 
 // http://localhost:8233/product-api/private/product en mode PUT
+// ou bien http://localhost:8233/product-api/private/product/618d53514e0720e69e2e54c8 en mode PUT
 // avec { "id" : "618d53514e0720e69e2e54c8" , "label" : "product_xy" , "price" : 16.3 } dans req.body
-apiRouter.route([ '/product-api/private/product',
-                  '/product-api/public/product'])
+apiRouter.route([ '/product-api/private/product','/product-api/private/product/:id' ,
+                  '/product-api/public/product', '/product-api/public/product/:id'])
 .put( async function(req , res  , next ) {
-	var newValueOfproductToUpdate = req.body;
-	console.log("PUT,newValueOfproductToUpdate="+JSON.stringify(newValueOfproductToUpdate));
+	let newValueOfEntityToUpdate = req.body;
+	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
+    if(nullOrEmptyObject(newValueOfEntityToUpdate)) { res.status(400).send(); return; } //BAD REQUEST 
+	//l'id de l'entity à mettre à jour en mode put peut soit être précisée en fin d'URL
+	//soit être précisée dans les données json de la partie body
+	//et si l'information est renseignée des 2 façons elle ne doit pas être incohérente:
+	let entityId = req.params.id; //may be found (as string) at end of URL
+	if(newValueOfEntityToUpdate.id != null && entityId != null 
+		&&  newValueOfEntityToUpdate.id != entityId ) { res.status(400).send(); return; } //BAD REQUEST (incoherent id)
+	if(newValueOfEntityToUpdate.id == null && entityId != null) newValueOfEntityToUpdate.id = entityId;
+	if(newValueOfEntityToUpdate.id != null && entityId == null ) entityId = newValueOfEntityToUpdate.id;
+
+	let verbose = req.query.v=="true"; //verbose mode (default as false)
 	try{
-		let updatedproduct = await productDao.updateOne(newValueOfproductToUpdate);
-		res.send(updatedproduct);
+		let updatedEntity = await productDao.updateOne(newValueOfEntityToUpdate);
+		if(verbose)
+		  res.send(updatedEntity); //200:OK with updated entity as Json response body
+		else
+		  res.status(204).send();//NO_CONTENT
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }
@@ -109,11 +123,15 @@ apiRouter.route([ '/product-api/private/product',
 apiRouter.route([ '/product-api/private/product/:id',
                   '/product-api/public/product/:id'])
 .delete( async function(req , res  , next ) {
-	var idproduct = req.params.id;
-	console.log("DELETE,idproduct="+idproduct);
+	let entityId = req.params.id;
+	console.log("DELETE,entityId="+entityId);
+	let verbose = req.query.v=="true"; //verbose mode (default as false)
 	try{
-		let deleteActionMessage = await productDao.deleteOne(idproduct);
-		res.send(deleteActionMessage);
+		let deleteActionMessage = await productDao.deleteOne(entityId);
+		if(verbose)
+		  res.send(deleteActionMessage);
+		else
+		  res.status(204).send();//NO_CONTENT
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }

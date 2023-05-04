@@ -1,6 +1,7 @@
 import express from 'express';
 const apiRouter = express.Router();
 
+import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import deviseDao from './devise-dao-mongoose.js';
 var PersistentDeviseModel = deviseDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
 
@@ -8,18 +9,7 @@ var PersistentDeviseModel = deviseDao.ThisPersistentModel; //to use only for spe
 //const axios = require('axios'); 
 import axios from 'axios';// npm install -s axios
 
-function statusCodeFromEx(ex){
-	let status = 500;
-	let error = ex?ex.error:null ; 
-	switch(error){
-		case "BAD_REQUEST" : status = 400; break;
-		case "NOT_FOUND" : status = 404; break;
-		//...
-		case "CONFLICT" : status = 409; break;
-		default: status = 500;
-	}
-	return status;
-}
+
 
 /*
 Nouvelle convention d'URL :
@@ -27,7 +17,11 @@ http://localhost:8233/devise-api/private/xyz en accès private (avec auth néces
 http://localhost:8233/devise-api/public/xyz en accès public (sans auth nécessaire)
 NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private pour tout le reste
     ICI Exceptionnellement EN TP , presques toutes les URLS sont doublées : appelables en public et private
-*/
+
+NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent" quand tout se passe bien
+     via l'option facultative ?v=true (au sens verbose=true) la réponse sera 200/OK accompagné
+     d'un message json
+	*/
 
 
 //*******************************************
@@ -45,11 +39,11 @@ apiRouter.route(['/devise-api/private/reinit' , '/devise-api/public/reinit' ])
 
 
 //exemple URL: http://localhost:8233/devise-api/public/devise/EUR
-apiRouter.route('/devise-api/public/devise/:code')
+apiRouter.route('/devise-api/public/devise/:id')
 .get( async function(req , res  , next ) {
-	var codeDevise = req.params.code;
+	var entityId = req.params.id;
 	try{
-		let devise = await deviseDao.findById( codeDevise);
+		let devise = await deviseDao.findById( entityId);
 		res.send(devise);
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
@@ -98,11 +92,17 @@ apiRouter.route('/devise-api/public/convert')
 apiRouter.route([ '/devise-api/private/devise',
                   '/devise-api/public/devise'])
 .post(async function(req , res  , next ) {
-	var nouvelleDevise = req.body;
-	console.log("POST,nouvelleDevise="+JSON.stringify(nouvelleDevise));
+	let newEntity = req.body;
+	console.log("POST,newEntity="+JSON.stringify(newEntity));
+	if(nullOrEmptyObject(newEntity)) { res.status(400).send(); return; } //BAD REQUEST
 	try{
-		let savedDevise = await deviseDao.save(nouvelleDevise);
-		res.send(savedDevise);
+		let savedEntity = await deviseDao.save(newEntity);
+		let id = newEntity.code ; //saved id (sometimes auto_incr id)
+		//NB: res.location('/devise/' + id) because some clients may send two calls:
+		//1. a post call to create new resource on server
+		//   the server respond 201 with Location: /devise/mxy in http response header
+		//2. the client may send a get request with /devise/mxy at url end to retreive full entity value
+		res.location('/devise/' + id).status(201).send(savedEntity);//201: successfully created
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }
@@ -111,15 +111,34 @@ apiRouter.route([ '/devise-api/private/devise',
 
 
 // http://localhost:8233/devise-api/private/devise en mode PUT
+//ou http://localhost:8233/devise-api/private/devise/EUR en mode PUT
 // avec { "code" : "USD" , "name" : "Dollar" , "change" : 1.123 } dans req.body
+// ou bien {  "name" : "Dollar" , "change" : 1.123 } dans req.body
 apiRouter.route([ '/devise-api/private/devise',
-                  '/devise-api/public/devise'])
+                  '/devise-api/private/devise/:id' ,
+                  '/devise-api/public/devise',
+				  '/devise-api/public/devise/:id'])
 .put( async function(req , res  , next ) {
-	var newValueOfdeviseToUpdate = req.body;
-	console.log("PUT,newValueOfdeviseToUpdate="+JSON.stringify(newValueOfdeviseToUpdate));
+	let newValueOfEntityToUpdate = req.body;
+	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
+    if(nullOrEmptyObject(newValueOfEntityToUpdate)) { res.status(400).send(); return; } //BAD REQUEST 
+	//l'id de l'entity à mettre à jour en mode put peut soit être précisée en fin d'URL
+	//soit être précisée dans les données json de la partie body
+	//et si l'information est renseignée des 2 façons elle ne doit pas être incohérente:
+	let entityId = req.params.id; //may be found (as string) at end of URL
+	if(newValueOfEntityToUpdate.code != null && entityId != null 
+		&&  newValueOfEntityToUpdate.code != entityId ) { res.status(400).send(); return; } //BAD REQUEST (incoherent id)
+	if(newValueOfEntityToUpdate.code == null && entityId != null) newValueOfEntityToUpdate.code = entityId;
+	if(newValueOfEntityToUpdate.code != null && entityId == null ) entityId = newValueOfEntityToUpdate.code;
+
+	let verbose = req.query.v=="true"; //verbose mode (default as false)
+	
 	try{
-		let updatedDevise = await deviseDao.updateOne(newValueOfdeviseToUpdate);
-		res.send(updatedDevise);
+		let updatedEntity = await deviseDao.updateOne(newValueOfEntityToUpdate);
+		if(verbose)
+		  res.send(updatedEntity); //200:OK with updated entity as Json response body
+		else
+		  res.status(204).send();//NO_CONTENT
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }
@@ -127,14 +146,19 @@ apiRouter.route([ '/devise-api/private/devise',
 
 
 // http://localhost:8233/devise-api/private/devise/EUR en mode DELETE
-apiRouter.route([ '/devise-api/private/devise/:code',
-                  '/devise-api/public/devise/:code'])
+// http://localhost:8233/devise-api/private/devise/EUR?v=true en mode DELETE
+apiRouter.route([ '/devise-api/private/devise/:id',
+                  '/devise-api/public/devise/:id'])
 .delete(   /*checkAuth.checkAuth ,*/async function(req , res  , next ) {
-	var codeDevise = req.params.code;
-	console.log("DELETE,codeDevise="+codeDevise);
+	let entityId = req.params.id;
+	console.log("DELETE,entityId="+entityId);
+	let verbose = req.query.v=="true"; //verbose mode (default as false)
 	try{
-		let deleteActionMessage = await deviseDao.deleteOne(codeDevise);
-		res.send(deleteActionMessage);
+		let deleteActionMessage = await deviseDao.deleteOne(entityId);
+		if(verbose)
+		  res.send(deleteActionMessage);
+		else
+		  res.status(204).send();//NO_CONTENT
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }
