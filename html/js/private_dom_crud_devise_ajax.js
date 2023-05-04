@@ -8,6 +8,10 @@ var idSelected;
 var currentDevise;
 var tabDevises = []; // A synchroniser (via api REST) avec le coté serveur
 
+function errCallback(err,status){
+	zoneMsg.innerText="error:" + err + " [" + status + "]";
+}
+
 window.onload = function(){
     initialiserPage();
 }
@@ -38,14 +42,9 @@ function loadDevisesWithAjax(){
 }
 
 function postNewDeviseWithAjax(nouvelleDevise){
-    //************ A FAIRE EN TP ***************************
-    /*makeAjaxPostRequest( .....URL QUI VA BIEN ..... ,
-                        nouvelleDevise AU FORMAT JSON ,  
-                        afterPostNewDeviseWithAjaxCallback);*/
-    makeAjaxPostRequest( "../devise-api/public/devise" ,
+    makeAjaxPostRequest( "../devise-api/private/devise" ,
                         JSON.stringify(nouvelleDevise) ,  
-                       afterPostNewDeviseWithAjaxCallback); 
-    //*******************************************************
+                       afterPostNewDeviseWithAjaxCallback,errCallback); 
 }
 
 function afterPostNewDeviseWithAjaxCallback(texteReponse){
@@ -59,9 +58,9 @@ function afterPostNewDeviseWithAjaxCallback(texteReponse){
 }
 
 function putNewValueOfExistingDeviseWithAjax(deviseToUpdate){
-    makeAjaxPutRequest("../devise-api/public/devise" ,
+    makeAjaxPutRequest("../devise-api/private/devise?v=true" ,
                         JSON.stringify(deviseToUpdate) ,  
-                        afterPutNewValueOfExistingDeviseWithAjaxCallback);
+                        afterPutNewValueOfExistingDeviseWithAjaxCallback,errCallback);
 }
 
 function afterPutNewValueOfExistingDeviseWithAjaxCallback(texteReponse){
@@ -73,9 +72,9 @@ function deleteOldDeviseWithAjax(oldDevise){
     //************ A FAIRE EN TP ***************************
     // var deleteUrl = URL qui va bien avec le bon code devise a supprimer à la fin
     //***************************************
-    let deleteUrl= "../devise-api/public/devise/" + oldDevise.code
+    let deleteUrl= "../devise-api/private/devise/" + oldDevise.code + "?v=true"
     console.log("deleteUrl=" +deleteUrl)
-    makeAjaxDeleteRequest(deleteUrl , afterDeleteOldDeviseWithAjaxCallback , displayMessage);
+    makeAjaxDeleteRequest(deleteUrl , afterDeleteOldDeviseWithAjaxCallback , errCallback);
 }
 
 

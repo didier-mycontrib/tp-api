@@ -11,7 +11,7 @@ const apiRouter = express.Router();
 
 async function tryInitRemoteOAuth2OidcKeycloakMode(){
     try{
-        await tryingOidcServerConnection("https://www.d-defrance.fr/keycloak/realms/myrealm/.well-known/openid-configuration");
+        await tryingOidcServerConnection("https://www.d-defrance.fr/keycloak/realms/sandboxrealm/.well-known/openid-configuration");
         initPassportKeycloakBearerStrategy();
         console.log("initPassportKeycloakBearerStrategy ok ")
     }catch(ex){
@@ -59,7 +59,7 @@ function initPassportKeycloakBearerStrategy(){
 
 // new KeycloakBearerStrategy(options, verify)
 passport.use(new KeycloakBearerStrategy({
-    "realm": "myrealm",
+    "realm": "sandboxrealm",
     "url": "https://www.d-defrance.fr/keycloak"
   }, (jwtPayload, done) => {
     //console.log("jwtPayload="+ JSON.stringify(jwtPayload));
@@ -72,7 +72,7 @@ passport.use(new KeycloakBearerStrategy({
 
 
 function checkAuthViaOauth2Oidc(req, res, next) {
-    console.log(`secureMode=${secureMode} standaloneMode=${standaloneMode} checkAuthViaOauth2Oidc ...`)
+    console.log(`checkAuthViaOauth2Oidc ...`)
     let authenticateFunction = passport.authenticate('keycloak'  , {session: false} );
     authenticateFunction(req,res,next);//send 401 if Unauthorized
     //or store user infos in req.user if auth is ok
