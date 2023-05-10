@@ -1,10 +1,13 @@
 
 //NEW UNIFIED VERSION (Standalone JWT or with OAuth2/oidc keycloak server)
 import axios from 'axios';
+import jwtUtil from './jwt-util.js';
 import passport from 'passport';
 import KeycloakBearerStrategy from 'passport-keycloak-bearer';
 import express from 'express';
 const apiRouter = express.Router();
+
+var standaloneModeOnly = false;  //or true if oauth2/oidc keycloak server is not ready/accessible
 
 // GLOBAL COMMON PART
 //*************************************************** 
@@ -13,8 +16,10 @@ async function tryInitRemoteOAuth2OidcKeycloakMode(){
     try{
         await tryingOidcServerConnection("https://www.d-defrance.fr/keycloak/realms/sandboxrealm/.well-known/openid-configuration");
         initPassportKeycloakBearerStrategy();
+        standaloneModeOnly = false;
         console.log("initPassportKeycloakBearerStrategy ok ")
     }catch(ex){
+        standaloneModeOnly = true;
         console.log("ERROR: initPassportKeycloakBearerStrategy not ok !!!!")
     }
 }
@@ -24,10 +29,29 @@ function verifTokenInHeadersForPrivatePath(req , res  , next ) {
     if( !req.path.includes("/private/")){
        next();
     }
-    else { //if secureMode==true
-       checkAuthViaOauth2Oidc(req,res,next);//phase1 (401 if invalid token)
+    else { 
+      if(standaloneModeOnly)
+         verifTokenInHeaders(req,res,next); //phase1 (401 if invalid token)
+                                  //future phase 2 : ckeck_scope
+      else
+      checkAuthStandaloneAndViaOauth2Oidc(req,res,next);//phase1 (401 if invalid token)
                                     //future phase 2 : ckeck_scope
     }
+}
+
+function checkAuthStandaloneAndViaOauth2Oidc(req, res, next) {
+  jwtUtil.extractSubjectWithScopesClaimFromJwtInAuthorizationHeader(req.headers.authorization)
+  .then((claim)=>{
+    req.user = { scope : claim.scope  , username : claim.preferred_username , email : claim.email ,
+                 name : claim.given_name + " " + claim.family_name}
+    console.log(`checkAuthStandaloneAndViaOauth2Oidc() with valid standalone token ...`)
+    next();
+  })
+  .catch((err)=>{
+    //si echec en mode standalone, second essai via serveur oauth2/oidc keycloak (en version TP seulement)
+    console.log(`checkAuthStandaloneAndViaOauth2Oidc() with invalid standalone token , second try via oauth2/oidc ...`)
+    checkAuthViaOauth2Oidc(req, res, next);
+   });
 }
 
 
@@ -82,7 +106,7 @@ function checkAuthViaOauth2Oidc(req, res, next) {
     if(  !req.path.includes("/private/") )
        next();
     else {
-        //console.log("req.method="+req.method)//"GET" or "POST" or ...
+        //console.log("in checkScopeForPrivatePath() req.method="+req.method + " req.user=" + JSON.stringify(req.user))//"GET" or "POST" or ...
         if(req.method=="DELETE" && !req.user.scope.includes('resource.delete'))
             res.status(403).send({error:"Forbidden (valid jwt but no required resource.delete scope)"});
         else if((req.method=="POST" || req.method=="PUT" || req.method=="PATCH" ) && !req.user.scope.includes('resource.write'))
@@ -92,6 +116,21 @@ function checkAuthViaOauth2Oidc(req, res, next) {
         else next();//else if ok , continue
     }
   }
+
+//******** Standalone JWT PART **********************
+//*************************************************** 
+
+// verif bearer token in Authorization headers of request :
+function verifTokenInHeaders(req , res  , next ) {
+  console.log(`standaloneModeOnly=${standaloneModeOnly} verifTokenInHeaders ...`)
+  jwtUtil.extractSubjectWithScopesClaimFromJwtInAuthorizationHeader(req.headers.authorization)
+  .then((claim)=>{
+    req.user = { scope : claim.scope  , username : claim.preferred_username , email : claim.email ,
+                 name : claim.given_name + " " + claim.family_name}
+    next();
+  })
+  .catch((err)=>{res.status(401).send({ error: "Unauthorized "+err?err:"" });});//401=Unauthorized or 403=Forbidden
+}
 
 
 

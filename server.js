@@ -7,6 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import productApiRoutes from './product-api-routes.js';
 import deviseApiRoutes from './devise-api-routes.js';
+import userApiRoutes from './standalone-user-api-routes.js';
+import loginApiRoutes from './standalone-login-api-routes.js';
 
 import verifAuth from './verif-auth.js'; //for  oauth2/iodc/keycloak  
 
@@ -45,6 +47,8 @@ app.use(verifAuth.checkScopeForPrivatePath); //with OAuth2 autorization server (
 // delegate REST API routes to apiRouter(s) :
 app.use(productApiRoutes.apiRouter);
 app.use(deviseApiRoutes.apiRouter);
+app.use(userApiRoutes.apiRouter);
+app.use(loginApiRoutes.apiRouter);
 
 // POST traitements generiques
 
