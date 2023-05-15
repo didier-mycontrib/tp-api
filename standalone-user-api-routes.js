@@ -40,7 +40,7 @@ apiRouter.route(['/standalone-user-api/public/user/:username'])
 	try{
 		let users = await userDao.findByCriteria(criteria);
 		console.log("users="+JSON.stringify(users));
-		if(users.length==1)
+		if(users.length>=1)
 		    res.send(users[0]);
 		else
 		   res.status(404).send({error : "NOT_FOUND" , reason : "no user with username="+username});
@@ -71,8 +71,14 @@ apiRouter.route([ '/standalone-user-api/public/user'])
 	console.log("POST,newEntity="+JSON.stringify(newEntity));
 	if(nullOrEmptyObject(newEntity)) { res.status(400).send(); return; } //BAD REQUEST
 	try{
-		let savedEntity = await userDao.save(newEntity);
-		res.status(201).send(savedEntity);//201: successfully created
+		let criteriaTestDoublon={ username : newEntity.username };
+		let usersWithSameUsername = await userDao.findByCriteria(criteriaTestDoublon);
+		if(usersWithSameUsername.length>=1){
+			res.status(409).send({"error":"CONFLICT","reason":"already one user with username="+newEntity.username});
+		}else{
+			let savedEntity = await userDao.save(newEntity);
+			res.status(201).send(savedEntity);//201: successfully created
+		}
     } catch(ex){
 	    res.status(statusCodeFromEx(ex)).send(ex);
     }

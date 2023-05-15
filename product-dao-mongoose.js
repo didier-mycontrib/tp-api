@@ -16,7 +16,7 @@ function initMongooseWithSchemaAndModel () {
    
     mongoose.Connection = thisDb;
       thisSchema = new mongoose.Schema({
-        /* default mongo _id: { type : String , alias : "id" } ,*/
+        /* default mongo _id: { type : ObjectId , alias : "id" } ,*/
         label: String,
         price : Number
       });
