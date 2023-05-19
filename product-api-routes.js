@@ -18,13 +18,17 @@ NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private 
 NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent" quand tout se passe bien
      via l'option facultative ?v=true (au sens verbose=true) la réponse sera 200/OK accompagné
      d'un message json
+
+NB3: les URLs sont exceptionnellement ici en deux versions (avec ou sans /tp/ pour que ça puisse fonctionner
+avec ou sans reverse-proxy dans un cadre très particulier de tp )		 
 */
 
 
 //*******************************************
 
 //exemple URL: http://localhost:8233/product-api/public/reinit
-apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ])
+apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ,
+                 '/tp/product-api/private/reinit' ,'/tp/product-api/public/reinit' ])
 .get( async function(req , res  , next ) {
 	try{
 		let doneActionMessage = await productDao.reinit_db();
@@ -36,7 +40,7 @@ apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ])
 
 
 //exemple URL: http://localhost:8233/product-api/public/product/618d53514e0720e69e2e54c8
-apiRouter.route('/product-api/public/product/:id')
+apiRouter.route(['/product-api/public/product/:id' ,'/tp/product-api/public/product/:id' ])
 .get( async function(req , res  , next ) {
 	var entityId = req.params.id;
 	try{
@@ -50,7 +54,7 @@ apiRouter.route('/product-api/public/product/:id')
 // exemple URL: http://localhost:8233/product-api/public/product
 // returning all products if no ?minPrice
 // http://localhost:8233/product-api/public/product?minPrice=1.05
-apiRouter.route('/product-api/public/product')
+apiRouter.route(['/product-api/public/product' , '/tp/product-api/public/product'])
 .get( async function(req , res  , next ) {
 	let minPrice = req.query.minPrice;
 	//var criteria=title?{ title: title }:{};
@@ -67,8 +71,8 @@ apiRouter.route('/product-api/public/product')
 // http://localhost:8233/product-api/private/product en mode post
 // avec { "id" : null , "label" : "productXy" , "price" : 12.3 }
 //ou bien { "label" : "productXy" , "price" : 12.3 } dans req.body
-apiRouter.route([ '/product-api/private/product',
-                  '/product-api/public/product'])
+apiRouter.route([ '/product-api/private/product', '/tp/product-api/private/product' ,
+                  '/product-api/public/product' , '/tp/product-api/public/product'])
 .post(async function(req , res  , next ) {
 	let newEntity = req.body;
 	console.log("POST,newEntity="+JSON.stringify(newEntity));
@@ -92,7 +96,9 @@ apiRouter.route([ '/product-api/private/product',
 // ou bien http://localhost:8233/product-api/private/product/618d53514e0720e69e2e54c8 en mode PUT
 // avec { "id" : "618d53514e0720e69e2e54c8" , "label" : "product_xy" , "price" : 16.3 } dans req.body
 apiRouter.route([ '/product-api/private/product','/product-api/private/product/:id' ,
-                  '/product-api/public/product', '/product-api/public/product/:id'])
+                  '/product-api/public/product', '/product-api/public/product/:id',
+				  '/tp/product-api/private/product','/tp/product-api/private/product/:id' ,
+                  '/tp/product-api/public/product', '/tp/product-api/public/product/:id'])
 .put( async function(req , res  , next ) {
 	let newValueOfEntityToUpdate = req.body;
 	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
@@ -120,8 +126,8 @@ apiRouter.route([ '/product-api/private/product','/product-api/private/product/:
 
 
 // http://localhost:8233/product-api/private/product/618d53514e0720e69e2e54c8 en mode DELETE
-apiRouter.route([ '/product-api/private/product/:id',
-                  '/product-api/public/product/:id'])
+apiRouter.route([ '/product-api/private/product/:id','/tp/product-api/private/product/:id',
+                  '/product-api/public/product/:id' , '/tp/product-api/public/product/:id'])
 .delete( async function(req , res  , next ) {
 	let entityId = req.params.id;
 	console.log("DELETE,entityId="+entityId);

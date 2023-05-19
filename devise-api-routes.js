@@ -21,13 +21,16 @@ NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private 
 NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent" quand tout se passe bien
      via l'option facultative ?v=true (au sens verbose=true) la réponse sera 200/OK accompagné
      d'un message json
-	*/
+
+NB3: les URLs sont exceptionnellement ici en deux versions (avec ou sans /tp/ pour que ça puisse fonctionner
+avec ou sans reverse-proxy dans un cadre très particulier de tp )	 
+*/
 
 
 //*******************************************
 
 //exemple URL: http://localhost:8233/devise-api/private/reinit
-apiRouter.route(['/devise-api/private/reinit' , '/devise-api/public/reinit' ])
+apiRouter.route(['/devise-api/private/reinit' , '/devise-api/public/reinit' , '/tp/devise-api/public/reinit' ])
 .get( async function(req , res  , next ) {
 	try{
 		let doneActionMessage = await deviseDao.reinit_db();
@@ -39,7 +42,7 @@ apiRouter.route(['/devise-api/private/reinit' , '/devise-api/public/reinit' ])
 
 
 //exemple URL: http://localhost:8233/devise-api/public/devise/EUR
-apiRouter.route('/devise-api/public/devise/:id')
+apiRouter.route(['/devise-api/public/devise/:id' , '/tp/devise-api/public/devise/:id'])
 .get( async function(req , res  , next ) {
 	var entityId = req.params.id;
 	try{
@@ -52,7 +55,7 @@ apiRouter.route('/devise-api/public/devise/:id')
 
 //exemple URL: http://localhost:8233/devise-api/public/devise (returning all devises)
 //             http://localhost:8233/devise-api/public/devise?changeMini=1.05
-apiRouter.route('/devise-api/public/devise')
+apiRouter.route(['/devise-api/public/devise' , '/tp/devise-api/public/devise'  ])
 .get( async function(req , res  , next ) {
 	var changeMini = Number(req.query.changeMini);
 	var criteria=changeMini?{ change: { $gte: changeMini } }:{};
@@ -65,7 +68,7 @@ apiRouter.route('/devise-api/public/devise')
 });
 
 //exemple URL: http://localhost:8233/devise-api/public/convert?amount=50&source=EUR&target=USD
-apiRouter.route('/devise-api/public/convert')
+apiRouter.route([ '/devise-api/public/convert' , '/tp/devise-api/public/convert' ])
 .get( async  function(req , res  , next ) {
 	let montant = Number(req.query.amount);
 	let codeDeviseSource = req.query.source;
@@ -89,8 +92,8 @@ apiRouter.route('/devise-api/public/convert')
 
 // http://localhost:8233/devise-api/private/devise en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
-apiRouter.route([ '/devise-api/private/devise',
-                  '/devise-api/public/devise'])
+apiRouter.route([ '/devise-api/private/devise', '/tp/devise-api/private/devise' ,
+                  '/devise-api/public/devise' , '/tp/devise-api/public/devise'])
 .post(async function(req , res  , next ) {
 	let newEntity = req.body;
 	console.log("POST,newEntity="+JSON.stringify(newEntity));
@@ -114,10 +117,10 @@ apiRouter.route([ '/devise-api/private/devise',
 //ou http://localhost:8233/devise-api/private/devise/EUR en mode PUT
 // avec { "code" : "USD" , "name" : "Dollar" , "change" : 1.123 } dans req.body
 // ou bien {  "name" : "Dollar" , "change" : 1.123 } dans req.body
-apiRouter.route([ '/devise-api/private/devise',
-                  '/devise-api/private/devise/:id' ,
-                  '/devise-api/public/devise',
-				  '/devise-api/public/devise/:id'])
+apiRouter.route([ '/devise-api/private/devise', '/tp/devise-api/private/devise',
+                  '/devise-api/private/devise/:id' , 'tp/devise-api/private/devise/:id' ,
+                  '/devise-api/public/devise','/tp/devise-api/public/devise' ,
+				  '/devise-api/public/devise/:id' , '/tp/devise-api/public/devise/:id'])
 .put( async function(req , res  , next ) {
 	let newValueOfEntityToUpdate = req.body;
 	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
@@ -147,8 +150,8 @@ apiRouter.route([ '/devise-api/private/devise',
 
 // http://localhost:8233/devise-api/private/devise/EUR en mode DELETE
 // http://localhost:8233/devise-api/private/devise/EUR?v=true en mode DELETE
-apiRouter.route([ '/devise-api/private/devise/:id',
-                  '/devise-api/public/devise/:id'])
+apiRouter.route([ '/devise-api/private/devise/:id', '/tp/devise-api/private/devise/:id' ,
+                  '/devise-api/public/devise/:id' ,  '/tp/devise-api/public/devise/:id'])
 .delete(   /*checkAuth.checkAuth ,*/async function(req , res  , next ) {
 	let entityId = req.params.id;
 	console.log("DELETE,entityId="+entityId);
@@ -193,7 +196,7 @@ async function  callFixerIoWebServiceWithAxios(){
 }//end of callFixerIoWebServiceWithAxios()
 
 //http://localhost:8233/devise-api/private/refresh
-apiRouter.route(['/devise-api/private/refresh' , '/devise-api/public/refresh' ])
+apiRouter.route(['/devise-api/private/refresh' , '/devise-api/public/refresh' , '/tp/devise-api/public/refresh' ])
 .get( async function(req , res  , next ) {
 	try {
 		let respData = await callFixerIoWebServiceWithAxios();

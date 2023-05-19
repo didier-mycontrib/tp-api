@@ -37,6 +37,8 @@ app.get('/', function(req , res ) {
   res.redirect('/html/index.html');
 });
 
+app.use('/tp-app', express.static(__dirname+"/tp-app"));
+
 //verif auth beared token in request for private api/path:
 
 app.use(verifAuth.verifTokenInHeadersForPrivatePath); // with OAuth2 autorization server or Standalone jwt

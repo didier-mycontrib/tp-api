@@ -14,6 +14,9 @@ http://localhost:8232/user-api/public/xyz en accès public (sans auth nécessair
 -----
 cette version "standalone" fonctionne avec une collection de "users" dans mongoDB
 et ne dialogue pas avec un serveur oauth2/oidc
+
+NB3: les URLs sont exceptionnellement ici en deux versions (avec ou sans /tp/ pour que ça puisse fonctionner
+avec ou sans reverse-proxy dans un cadre très particulier de tp )	
 */
 
 
@@ -21,7 +24,7 @@ et ne dialogue pas avec un serveur oauth2/oidc
 
 
 //exemple URL: http://localhost:8233/standalone-user-api/public/reinit
-apiRouter.route(['/standalone-user-api/public/reinit' ])
+apiRouter.route(['/standalone-user-api/public/reinit' , '/tp/standalone-user-api/public/reinit' ])
 .get( async function(req , res  , next ) {
 	try{
 		let doneActionMessage = await userDao.reinit_db();
@@ -33,7 +36,7 @@ apiRouter.route(['/standalone-user-api/public/reinit' ])
 
 
 //exemple URL: http://localhost:8233/standalone-user-api/public/user/user1
-apiRouter.route(['/standalone-user-api/public/user/:username'])
+apiRouter.route(['/standalone-user-api/public/user/:username' , '/tp/standalone-user-api/public/user/:username'])
 .get( async function(req , res  , next ) {
 	var username = req.params.username;
 	let criteria={ username : username };
@@ -50,7 +53,7 @@ apiRouter.route(['/standalone-user-api/public/user/:username'])
 });
 
 //exemple URL: http://localhost:8233/standalone-user-api/public/user (returning all user accounts)
-apiRouter.route([ '/standalone-user-api/public/user'])
+apiRouter.route([ '/standalone-user-api/public/user' , '/tp/standalone-user-api/public/user'])
 .get( async function(req , res  , next ) {
 	let criteria={};
 	try{
@@ -65,7 +68,7 @@ apiRouter.route([ '/standalone-user-api/public/user'])
 
 // http://localhost:8233/standalone-user-api/public/user en mode post
 // avec {"firstName":"joe","lastName":"Dalton","email":"joe.dalton@jail.com","username":"user4","groups":["user_of_myrealm"],"newPassword":"pwd4"} dans req.body
-apiRouter.route([ '/standalone-user-api/public/user'])
+apiRouter.route([ '/standalone-user-api/public/user' , '/tp/standalone-user-api/public/user'])
 .post(async function(req , res  , next ) {
 	let newEntity = req.body;
 	console.log("POST,newEntity="+JSON.stringify(newEntity));
@@ -88,7 +91,7 @@ apiRouter.route([ '/standalone-user-api/public/user'])
 
 // http://localhost:8233/standalone-user-api/public/user en mode PUT
 // avec {"firstName":"joe","lastName":"Dalton","email":"joe.dalton@jail.com","username":"user4","groups":["user_of_myrealm"],"newPassword":"pwd4"} dans req.body
-apiRouter.route([ '/standalone-user-api/public/user'])
+apiRouter.route([ '/standalone-user-api/public/user' , '/tp/standalone-user-api/public/user'])
 .put( async function(req , res  , next ) {
 	let newValueOfEntityToUpdate = req.body;
 	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
@@ -117,7 +120,7 @@ apiRouter.route([ '/standalone-user-api/public/user'])
 
 
 // http://localhost:8233/standalone-user-api/public/user/user1 en mode DELETE
-apiRouter.route(['/standalone-user-api/public/user/:username'])
+apiRouter.route(['/standalone-user-api/public/user/:username' , '/tp/standalone-user-api/public/user/:username'])
 .delete( async function(req , res  , next ) {
 	var username = req.params.username;
 	console.log("DELETE,username="+username);
