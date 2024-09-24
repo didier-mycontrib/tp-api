@@ -9,8 +9,8 @@ var PersistentproductModel = productDao.ThisPersistentModel; //to use only for s
 
 /*
 Nouvelle convention d'URL :
-http://localhost:8233/product-api/private/xyz en accès private (avec auth nécessaire)
-http://localhost:8233/product-api/public/xyz en accès public (sans auth nécessaire)
+http://localhost:8233/tp/product-api/v1/private/xyz en accès private (avec auth nécessaire)
+http://localhost:8233/tp/product-api/v1/public/xyz en accès public (sans auth nécessaire)
 
 NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private pour tout le reste
     ICI Exceptionnellement EN TP , presques toutes les URLS sont doublées : appelables en public et private
@@ -26,8 +26,9 @@ avec ou sans reverse-proxy dans un cadre très particulier de tp )
 
 //*******************************************
 
-//exemple URL: http://localhost:8233/product-api/public/reinit
-apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ,
+//exemple URL: http://localhost:8233/tp/product-api/v1/public/reinit
+apiRouter.route([ '/tp/product-api/v1/private/reinit' ,'/tp/product-api/v1/public/reinit',
+				 '/product-api/private/reinit' ,'/product-api/public/reinit' ,
                  '/tp/product-api/private/reinit' ,'/tp/product-api/public/reinit' ])
 .get( async function(req , res  , next ) {
 	try{
@@ -39,8 +40,9 @@ apiRouter.route(['/product-api/private/reinit' ,'/product-api/public/reinit' ,
 });
 
 
-//exemple URL: http://localhost:8233/product-api/public/product/618d53514e0720e69e2e54c8
-apiRouter.route(['/product-api/public/product/:id' ,'/tp/product-api/public/product/:id' ])
+//exemple URL: http://localhost:8233/tp/product-api/v1/public/product/618d53514e0720e69e2e54c8
+apiRouter.route(['/tp/product-api/v1/public/products/:id' ,
+				 '/product-api/public/product/:id' ,'/tp/product-api/public/product/:id' ])
 .get( async function(req , res  , next ) {
 	var entityId = req.params.id;
 	try{
@@ -51,10 +53,11 @@ apiRouter.route(['/product-api/public/product/:id' ,'/tp/product-api/public/prod
     } 
 });
 
-// exemple URL: http://localhost:8233/product-api/public/product
+// exemple URL: http://localhost:8233/tp/product-api/v1/public/products
 // returning all products if no ?minPrice
-// http://localhost:8233/product-api/public/product?minPrice=1.05
-apiRouter.route(['/product-api/public/product' , '/tp/product-api/public/product'])
+// http://localhost:8233/tp/product-api/v1/public/products?minPrice=1.05
+apiRouter.route(['/tp/product-api/v1/public/products' , '/tp/product-api/public/products',
+				'/product-api/public/product' , '/tp/product-api/public/product'])
 .get( async function(req , res  , next ) {
 	let minPrice = req.query.minPrice;
 	//var criteria=title?{ title: title }:{};
@@ -68,10 +71,11 @@ apiRouter.route(['/product-api/public/product' , '/tp/product-api/public/product
 });
 
 
-// http://localhost:8233/product-api/private/product en mode post
+// http://localhost:8233/tp/product-api/v1/private/products en mode post
 // avec { "id" : null , "label" : "productXy" , "price" : 12.3 }
 //ou bien { "label" : "productXy" , "price" : 12.3 } dans req.body
-apiRouter.route([ '/product-api/private/product', '/tp/product-api/private/product' ,
+apiRouter.route([ '/tp/product-api/v1/private/products', '/tp/product-api/v1/public/products',
+				  '/product-api/private/product', '/tp/product-api/private/product' ,
                   '/product-api/public/product' , '/tp/product-api/public/product'])
 .post(async function(req , res  , next ) {
 	let newEntity = req.body;
@@ -92,10 +96,10 @@ apiRouter.route([ '/product-api/private/product', '/tp/product-api/private/produ
 
 
 
-// http://localhost:8233/product-api/private/product en mode PUT
-// ou bien http://localhost:8233/product-api/private/product/618d53514e0720e69e2e54c8 en mode PUT
+// http://localhost:8233/tp/product-api/v1/private/products/618d53514e0720e69e2e54c8 en mode PUT
 // avec { "id" : "618d53514e0720e69e2e54c8" , "label" : "product_xy" , "price" : 16.3 } dans req.body
-apiRouter.route([ '/product-api/private/product','/product-api/private/product/:id' ,
+apiRouter.route([ '/tp/product-api/v1/private/products/:id','/tp/product-api/v1/private/products/:id',
+				 '/product-api/private/product','/product-api/private/product/:id' ,
                   '/product-api/public/product', '/product-api/public/product/:id',
 				  '/tp/product-api/private/product','/tp/product-api/private/product/:id' ,
                   '/tp/product-api/public/product', '/tp/product-api/public/product/:id'])
@@ -125,8 +129,9 @@ apiRouter.route([ '/product-api/private/product','/product-api/private/product/:
 });
 
 
-// http://localhost:8233/product-api/private/product/618d53514e0720e69e2e54c8 en mode DELETE
-apiRouter.route([ '/product-api/private/product/:id','/tp/product-api/private/product/:id',
+// http://localhost:8233/tp/product-api/v1/private/products/618d53514e0720e69e2e54c8 en mode DELETE
+apiRouter.route([ '/tp/product-api/v1/private/products/:id','/tp/product-api/v1/private/products/:id',
+				  '/product-api/private/product/:id','/tp/product-api/private/product/:id',
                   '/product-api/public/product/:id' , '/tp/product-api/public/product/:id'])
 .delete( async function(req , res  , next ) {
 	let entityId = req.params.id;
