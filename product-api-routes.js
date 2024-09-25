@@ -100,7 +100,7 @@ apiRouter.route([ '/product-api/v1/private/products', '/product-api/v1/public/pr
 
 // http://localhost:8233/product-api/v1/private/products/618d53514e0720e69e2e54c8 en mode PUT
 // avec { "id" : "618d53514e0720e69e2e54c8" , "label" : "product_xy" , "price" : 16.3 } dans req.body
-apiRouter.route([ '/product-api/v1/private/products/:id','/product-api/v1/private/products/:id',
+apiRouter.route([ '/product-api/v1/public/products/:id','/product-api/v1/private/products/:id',
 				 '/product-api/private/product','/product-api/private/product/:id' ,
                   '/product-api/public/product', '/product-api/public/product/:id'])
 .put( async function(req , res  , next ) {
@@ -130,7 +130,7 @@ apiRouter.route([ '/product-api/v1/private/products/:id','/product-api/v1/privat
 
 
 // http://localhost:8233/product-api/v1/private/products/618d53514e0720e69e2e54c8 en mode DELETE
-apiRouter.route([ '/product-api/v1/private/products/:id','/product-api/v1/private/products/:id',
+apiRouter.route([ '/product-api/v1/public/products/:id','/product-api/v1/private/products/:id',
 				  '/product-api/private/product/:id' , '/product-api/public/product/:id' ])
 .delete( async function(req , res  , next ) {
 	let entityId = req.params.id;
