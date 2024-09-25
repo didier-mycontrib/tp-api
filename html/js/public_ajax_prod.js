@@ -22,7 +22,7 @@ function onSelectRow(evt){
   let selectedTD = evt.target;
   let idSelectedRow=(selectedTD.parentNode).id;
   let codeOfSelectedProd = idSelectedRow.substring(2); //after p_
-  makeAjaxGetRequest("../product-api/public/product/"+codeOfSelectedProd,function(data){
+  makeAjaxGetRequest("../product-api/v1/public/products/"+codeOfSelectedProd,function(data){
 	var selectedProd = JSON.parse(data);
 	displaySelectedProd(selectedProd);
   });
@@ -36,7 +36,7 @@ function callbackAfterUpdate(data){
 function onUpdateProd(evt){
 	var prod = initProdFromNewInput();
 	var jsonData = JSON.stringify(prod);//new value to send to backend
-	var url = "../product-api/public/product?v=true"
+	var url = "../product-api/v1/public/products/"+prod.id+"?v=true"
 	makeAjaxPutRequest(url,jsonData,callbackAfterUpdate,errCallback)
 }
 
@@ -56,7 +56,7 @@ function refreshAllDataInTable(){
 	//URL relative ici en .. pour remonter de http://localhost:8233/html
 	//vers http://localhost:8233
 	
-	makeAjaxGetRequest("../product-api/public/product",function(data){
+	makeAjaxGetRequest("../product-api/v1/public/products",function(data){
 		tabProd = JSON.parse(data);
 		for(let i in tabProd){
 			addRowInTable(tabProd[i]);

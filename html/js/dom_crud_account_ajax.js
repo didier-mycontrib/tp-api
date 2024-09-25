@@ -1,5 +1,5 @@
 //variables globales:
-var accountWsUrl="../standalone-user-api/public"; //V1 only (temp)
+var accountWsUrl="../standalone-user-api/v1/public"; //V1 only (temp)
 
 var zoneBodyTableau;
 var zoneUsername;
@@ -31,7 +31,7 @@ function displayMessage(txt){
 }
 
 function loadAccountsWithAjax(){
-    makeAjaxGetRequest(accountWsUrl+"/group" ,  function(texteReponse){
+    makeAjaxGetRequest(accountWsUrl+"/groups" ,  function(texteReponse){
         tabGroupsNames = JSON.parse(texteReponse /* au format json string */);
         for(i=0;i<tabGroupsNames.length;i++){
             let opt = document.createElement("option");
@@ -40,7 +40,7 @@ function loadAccountsWithAjax(){
         }
     });
 
-    makeAjaxGetRequest(accountWsUrl+"/user" ,  function(texteReponse){
+    makeAjaxGetRequest(accountWsUrl+"/users" ,  function(texteReponse){
         tabAccounts = JSON.parse(texteReponse /* au format json string */);
         for(i=0;i<tabAccounts.length;i++){
             addAccountRow(tabAccounts[i]);
@@ -49,7 +49,7 @@ function loadAccountsWithAjax(){
 }
 
 function postNewAccountWithAjax(nouvelleAccount){
-    makeAjaxPostRequest( accountWsUrl+"/user" ,
+    makeAjaxPostRequest( accountWsUrl+"/users" ,
                         JSON.stringify(nouvelleAccount) ,  
                        afterPostNewAccountWithAjaxCallback); 
 }
@@ -65,7 +65,7 @@ function afterPostNewAccountWithAjaxCallback(texteReponse){
 }
 
 function putNewValueOfExistingAccountWithAjax(accountToUpdate){
-    makeAjaxPutRequest(accountWsUrl+"/user" ,
+    makeAjaxPutRequest(accountWsUrl+"/users/"+ accountToUpdate.username ,
                         JSON.stringify(accountToUpdate) ,  
                         afterPutNewValueOfExistingAccountWithAjaxCallback);
 }
@@ -76,7 +76,7 @@ function afterPutNewValueOfExistingAccountWithAjaxCallback(texteReponse){
 }
 
 function deleteOldAccountWithAjax(oldAccount){
-    let deleteUrl= accountWsUrl+"/user/" + oldAccount.username
+    let deleteUrl= accountWsUrl+"/users/" + oldAccount.username
     console.log("deleteUrl=" +deleteUrl)
     makeAjaxDeleteRequest(deleteUrl , afterDeleteOldAccountWithAjaxCallback , displayMessage);
 }

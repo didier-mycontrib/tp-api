@@ -25,7 +25,7 @@ function displayMessage(txt){
 
 function loadDevisesWithAjax(){
     //************ CODE A ANALYSER ET COMPRENDRE EN TP ***************************
-    makeAjaxGetRequest("../devise-api/public/devise" ,  function(texteReponse){
+    makeAjaxGetRequest("../devise-api/v1/public/devises" ,  function(texteReponse){
         tabDevises = JSON.parse(texteReponse /* au format json string */);
         /* //old simulated values:
         tabDevises.push({code:'EUR' , name : 'Euro' , change : 1})
@@ -42,7 +42,7 @@ function postNewDeviseWithAjax(nouvelleDevise){
     /*makeAjaxPostRequest( .....URL QUI VA BIEN ..... ,
                         nouvelleDevise AU FORMAT JSON ,  
                         afterPostNewDeviseWithAjaxCallback);*/
-    makeAjaxPostRequest( "../devise-api/public/devise" ,
+    makeAjaxPostRequest( "../devise-api/v1/public/devises" ,
                         JSON.stringify(nouvelleDevise) ,  
                        afterPostNewDeviseWithAjaxCallback); 
     //*******************************************************
@@ -59,7 +59,7 @@ function afterPostNewDeviseWithAjaxCallback(texteReponse){
 }
 
 function putNewValueOfExistingDeviseWithAjax(deviseToUpdate){
-    makeAjaxPutRequest("../devise-api/public/devise?v=true" ,
+    makeAjaxPutRequest("../devise-api/v1/public/devises/"+deviseToUpdate.code+"?v=true" ,
                         JSON.stringify(deviseToUpdate) ,  
                         afterPutNewValueOfExistingDeviseWithAjaxCallback);
 }
@@ -73,7 +73,7 @@ function deleteOldDeviseWithAjax(oldDevise){
     //************ A FAIRE EN TP ***************************
     // var deleteUrl = URL qui va bien avec le bon code devise a supprimer à la fin
     //***************************************
-    let deleteUrl= "../devise-api/public/devise/" + oldDevise.code + "?v=true"
+    let deleteUrl= "../devise-api/v1/public/devises/" + oldDevise.code + "?v=true"
     console.log("deleteUrl=" +deleteUrl)
     makeAjaxDeleteRequest(deleteUrl , afterDeleteOldDeviseWithAjaxCallback , displayMessage);
 }
