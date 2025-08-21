@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:22
 # this new image will be create from parent image = node:16 ou :18 (stable)
 
 # Create app directory inside docker image
@@ -17,7 +17,8 @@ COPY .   .
 
 #setting ENV-VARIABLE
 ENV PORT=8233
-ENV MONGODB_URL=mongodb://root:root@mongoDB.host:27017
+#ENV MONGODB_URL=mongodb://root:root@mongoDB.host:27017
+#MONGODB_URL is now replaced by MONGODB_HOSTNAME + ... + ...
 
 EXPOSE 8233
 CMD [ "npm", "start" ]

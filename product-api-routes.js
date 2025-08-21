@@ -3,7 +3,7 @@ const apiRouter = express.Router();
 
 import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import productDao from './product-dao-mongoose.js';
-var PersistentproductModel = productDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
+// productDao.ThisPersistentModelFn(); //to use only for specific extra request (not in dao)
 
 
 

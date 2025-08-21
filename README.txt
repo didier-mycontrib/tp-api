@@ -4,6 +4,11 @@ npm install -s axios
 =======================
 npm install -s passport passport-keycloak-bearer pour version dépendante de OAuth2/keycloak
 npm install -s passport
+npm install -s swagger-ui-express
+npm install -s swagger-jsdoc
+====
+npm install --save-dev mocha chai chai-http @testcontainers/mongodb
+
 ===========
 npm install -s jsonwebtoken
 ===========
@@ -43,3 +48,8 @@ https://www.d-defrance.fr/tp/tp-api-html/index.html
 NB: ce serveur est compatible avec l'application angular "tp-app"
 (code source : https://github.com/didier-mycontrib/tp-app)
 et avec une version normalement accessible en ligne : https://www.d-defrance.fr/tp-app
+
+
+//NB: le fichier www-d-defrance-fr-chain.pem à la racine du projet est nécessaire 
+//pour une bonne communication avec keycloak 
+//et ce fichier doit être réactualisé tous les ans (après réactualisation du certificat ssl)

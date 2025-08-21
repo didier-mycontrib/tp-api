@@ -1,3 +1,5 @@
+import Keycloak from './keycloak.js';
+
 var keycloak = new Keycloak({
 	url: 'https://www.d-defrance.fr/keycloak',
 	realm: 'sandboxrealm',

@@ -9,6 +9,10 @@ const apiRouter = express.Router();
 
 var standaloneModeOnly = false;  //or true if oauth2/oidc keycloak server is not ready/accessible
 
+//NB: le fichier www-d-defrance-fr-chain.pem à la racine du projet est nécessaire 
+//pour une bonne communication avec keycloak 
+//et ce fichier doit être réactualisé tous les ans (après réactualisation du certificat ssl)
+
 // GLOBAL COMMON PART
 //*************************************************** 
 

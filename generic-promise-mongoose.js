@@ -1,69 +1,69 @@
-//V2 (essentiel ok , compatible mongoose 7 sans callback) - peaufinable
+//V1 (essentiel ok) - peaufinable
 
-function findByIdWithModel(id,PersistentModel) {
-    return new Promise( (resolve,reject)=>{
-      PersistentModel.findById( id )
-          .then((entity)=>{ if(entity == null) 
-                              reject({error:'NOT_FOUND' , reason : "no entity found with id="+id});
-                            else resolve(entity);
-                          })
-          .catch((err)=>{ reject({error:'can not find by id' , cause : err}); }  );
-
-    });
+async function findByIdWithModel(id,PersistentModel) {
+    try{
+          let entity = await PersistentModel.findById( id )
+          if(entity == null) reject({error:'NOT_FOUND' , 
+                                     reason : "no entity found with id="+id});
+          /*else*/ return entity;
+    }catch(ex){
+         throw {error:'can not find by id' , cause : ex}
+    }
   }
-  
-  
   
   //exemple of criteria : {} or { unitPrice: { $gte: 25 } } or ...
-  function findByCriteriaWithModel(criteria,PersistentModel) {
-    return new Promise( (resolve,reject)=>{
-      PersistentModel.find( criteria)
-                    .then((entities)=>{ resolve(entities);  })
-                    .catch((err)=>{ reject({error:'can not find' , cause : err}); }  );
-     });
+  async function findByCriteriaWithModel(criteria,PersistentModel) {
+    try{
+          let entities = await PersistentModel.find(criteria);
+          return entities;
+    }catch(ex){
+         console.error("error in findByCriteriaWithModel:" + ex)
+         throw {error:'can not find ' , cause : ex}
+    }
   }
   
-  function saveWithModel(entity,PersistentModel) {
-    return new Promise( (resolve,reject)=>{
+  async function saveWithModel(entity,PersistentModel) {
+    try{
       let  persistentEntity = new PersistentModel(entity);
-      persistentEntity.save()
-                  .then((savedEntity)=>{ entity.id = savedEntity.id;  resolve(entity);  })
-                  .catch((err)=>{ 
-                    if(err && err.code == 11000)
-                      reject({ error : "CONFLICT" , reason : "existing entity with same id"  });
-                    else
-                      reject({error : "cannot insert in database" , cause : err});
-                   }  );
-    });
+      let savedEntity = await persistentEntity.save()
+      entity.id = savedEntity.id;
+      return entity;
+    }catch(ex){
+         console.error("error in saveWithModel:" + ex)
+         throw {error:'cannot insert in database ' , cause : ex}
+    }
   }
   
-  function updateOneWithModel(newValueOfEntityToUpdate,idOfEntityToUpdate,PersistentModel) {
-    return new Promise( (resolve,reject)=>{
+  async function updateOneWithModel(newValueOfEntityToUpdate,idOfEntityToUpdate,PersistentModel) {
+    try{
       const filter = { _id :  idOfEntityToUpdate };
       //console.log("filter of updateOne=" +JSON.stringify(filter));
-      PersistentModel.updateOne(filter , newValueOfEntityToUpdate)
-                  .then((opResultObject)=>{ 
-                    console.log("opResultObject of updateOne=" +JSON.stringify(opResultObject))
-                    if(opResultObject.matchedCount == 1)
-                       resolve(newValueOfEntityToUpdate);
-                    else reject({ error : "NOT_FOUND" , reason : "no entity to update with id=" + idOfEntityToUpdate });
-                    })
-                  .catch((err)=>{ reject({ error : "cannot updateOne " , cause :  err}); }  );
-    });
+      let opResultObject = await PersistentModel.updateOne(filter , newValueOfEntityToUpdate);
+      console.log("opResultObject of updateOne=" +JSON.stringify(opResultObject))
+      if(opResultObject.matchedCount == 1)
+          return newValueOfEntityToUpdate;
+      else throw { error : "NOT_FOUND" , 
+                 reason : "no entity to update with id=" + idOfEntityToUpdate }
+    }catch(ex){
+         console.error("error in updateOneWithModel:" + ex)
+         throw {error:'cannot updateOne ' , cause : ex}
+    }
   }
   
-  function deleteOneWithModel(idOfEntityToDelete,PersistentModel) {
-    return new Promise( (resolve,reject)=>{
+  async function deleteOneWithModel(idOfEntityToDelete,PersistentModel) {
+    try{
       const filter = { _id : idOfEntityToDelete };
-      console.log("filter of deleteOne=" +JSON.stringify(filter));
-      PersistentModel.deleteOne(filter )
-                .then((opResultObject)=>{ 
-                  console.log("opResultObject of deleteOne=" +JSON.stringify(opResultObject))
-                  if(opResultObject.deletedCount == 1) resolve({ deletedId : idOfEntityToDelete });
-                    else reject({ error : "NOT_FOUND" , reason : "no entity to delete with id=" + idOfEntityToDelete });
-                  })
-                .catch((err)=>{ reject({ error : "cannot delete " , cause :  err}); }  );
-    });
+     // console.log("filter of deleteOne=" +JSON.stringify(filter));
+      let opResultObject = await PersistentModel.deleteOne(filter);
+      //console.log("opResultObject of deleteOne=" +JSON.stringify(opResultObject))
+      if(opResultObject.deletedCount == 1) 
+          return { deletedId : idOfEntityToDelete };
+      else throw { error : "NOT_FOUND" , 
+                   reason : "no entity to delete with id=" + idOfEntityToDelete }
+    }catch(ex){
+         console.error("error in deleteOneWithModel:" + ex)
+         throw {error:'cannot delete ' , cause : ex}
+    }
   }
 
 

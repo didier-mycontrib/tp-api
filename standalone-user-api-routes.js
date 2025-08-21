@@ -1,11 +1,9 @@
 import express from 'express';
 import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import userDao from './standalone-user-dao-mongoose.js';
-var PersistentproductModel = userDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
+//userDao.ThisPersistentModelFn(); //to use only for specific extra request (not in dao)
 
 const apiRouter = express.Router();
-
-
 
 
 /*
@@ -100,6 +98,7 @@ apiRouter.route(['/standalone-user-api/v1/public/users' ,
 // http://localhost:8233/standalone-user-api/v1/public/users/.... en mode PUT
 // avec {"firstName":"joe","lastName":"Dalton","email":"joe.dalton@jail.com","username":"user4","groups":["user_of_myrealm"],"newPassword":"pwd4"} dans req.body
 apiRouter.route([ '/standalone-user-api/v1/public/users/:id',
+	                '/standalone-user-api/public/user/:id',
 				  '/standalone-user-api/public/user' ])
 .put( async function(req , res  , next ) {
 	let newValueOfEntityToUpdate = req.body;

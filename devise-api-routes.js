@@ -3,7 +3,7 @@ const apiRouter = express.Router();
 
 import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import deviseDao from './devise-dao-mongoose.js';
-var PersistentDeviseModel = deviseDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
+//deviseDao.ThisPersistentModelFn() //to use only for specific extra request (not in dao)
 
 //NB: les api axios ou fetch servent à appeler des WS REST avec des Promises
 //const axios = require('axios'); 
@@ -62,6 +62,15 @@ apiRouter.route(['/devise-api/v1/public/devises/:id' ,
 
 //exemple URL: http://localhost:8233/devise-api/v1/public/devises (returning all devises)
 //             http://localhost:8233/devise-api/v1/public/devises?changeMini=1.05
+/**
+ * @openapi
+ * /devise-api/v1/public/devises:
+ *   get:
+ *     description: get devises from criteria 
+ *     responses:
+ *       200:
+ *         description: devise list
+ */
 apiRouter.route([ '/devise-api/v1/public/devises', '/devise-api/public/devise'  ])
 .get( async function(req , res  , next ) {
 	var changeMini = Number(req.query.changeMini);
@@ -156,6 +165,15 @@ apiRouter.route([ '/devise-api/v1/public/devises/:id' , '/devise-api/v1/private/
 
 // http://localhost:8233/devise-api/v1/private/devises/EUR en mode DELETE
 // http://localhost:8233/devise-api/v1/private/devises/EUR?v=true en mode DELETE
+/**
+ * @openapi
+ * /devise-api/v1/private/devises:
+ *   delete:
+ *     description: delete devise from code/id
+ *     responses:
+ *       204:
+ *         description: NO_CONTENT (OK)
+ */
 apiRouter.route([ '/devise-api/v1/private/devises/:id', '/devise-api/v1/public/devises/:id' ,
 				  '/devise-api/private/devise/:id',   '/devise-api/public/devise/:id' ])
 .delete(   /*checkAuth.checkAuth ,*/async function(req , res  , next ) {

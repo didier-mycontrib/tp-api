@@ -3,7 +3,7 @@ import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js"
 const apiRouter = express.Router();
 
 import userDao from './standalone-user-dao-mongoose.js';
-var PersistentLoginModel = userDao.ThisPersistentModel; //to use only for specific extra request (not in dao)
+// userDao.ThisPersistentModelFn(); //to use only for specific extra request (not in dao)
 
 import jwtUtil from './jwt-util.js';
 

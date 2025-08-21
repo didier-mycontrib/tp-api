@@ -1,5 +1,8 @@
 import express from 'express';
-var app = express();
+export const  app = express();
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdocPkg from 'swagger-jsdoc';
+const  swaggerJSDoc  = swaggerJsdocPkg;
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -39,10 +42,30 @@ app.get('/', function(req , res ) {
 
 app.use('/tp-app', express.static(__dirname+"/tp-app"));
 
-//verif auth beared token in request for private api/path:
+let withoutAuth = process.env.WITHOUT_AUTH ;
 
-app.use(verifAuth.verifTokenInHeadersForPrivatePath); // with OAuth2 autorization server or Standalone jwt
-app.use(verifAuth.checkScopeForPrivatePath); //with OAuth2 autorization server (no effect in standaloneMode)
+if(withoutAuth!="yes"){
+	//verif auth beared token in request for private api/path:
+
+	app.use(verifAuth.verifTokenInHeadersForPrivatePath); // with OAuth2 autorization server or Standalone jwt
+	app.use(verifAuth.checkScopeForPrivatePath); //with OAuth2 autorization server (no effect in standaloneMode)
+}
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'qcm-api',
+      version: '1.0.0',
+    },
+  },
+  apis: ['*-routes.js'], // files containing annotations with @openapi
+};
+const swaggerSpec = swaggerJSDoc(options);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 
 //ROUTES ORDINAIRES (apres PRE traitements , avant POST traitements)
 
@@ -54,12 +77,12 @@ app.use(loginApiRoutes.apiRouter);
 
 // POST traitements generiques
 
-app.all("/*", function( req , res  , next ){
+app.all("/{*splat}", function( req , res  , next ){
   res.status(400).send(); //BAD_REQUEST if no route match
 })
 
 
 let backendPort = process.env.PORT || 8233; 
-app.listen(backendPort , function () {
+export const server = app.listen(backendPort , function () {
   console.log("http://localhost:"+backendPort);
 });

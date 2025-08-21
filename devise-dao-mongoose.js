@@ -2,8 +2,6 @@ import mongoose from 'mongoose';
 import dbMongoose from './db-mongoose.js';
 import genericPromiseMongoose from './generic-promise-mongoose.js';//generic helper for entity model with  .id , ._id
 
-var thisDb = dbMongoose.thisDb;
-
 //NB: This is for current entity type ("Devise" or "Customer" or "Product" or ...)
 //NB: thisSchema end ThisPersistentModel should not be exported (private only in this current module)
 var thisSchema;//mongoose Shcema (structure of mongo document)
@@ -14,7 +12,7 @@ function initMongooseWithSchemaAndModel () {
     //default auto generated objectId of mongoDB is better than number auto_incr
     //because it is more unique (no problem with objectId, but risk of same id  if auto_incr is reset)
    
-    mongoose.Connection = thisDb;
+    mongoose.Connection = dbMongoose.thisDbFn();
       thisSchema = new mongoose.Schema({
         _id: { type : String , alias : "code" } ,
         name: String   ,
@@ -31,45 +29,48 @@ function initMongooseWithSchemaAndModel () {
       ThisPersistentModel = mongoose.model('Devise', thisSchema);
 }
 
-initMongooseWithSchemaAndModel();
+function ThisPersistentModelFn(){
+  if(ThisPersistentModel==null)
+      initMongooseWithSchemaAndModel();
+  return ThisPersistentModel;
+}
 
-function reinit_db(){
-  return new Promise( (resolve,reject)=>{
+async function reinit_db(){
+    try {
       const deleteAllFilter = { }
-      ThisPersistentModel.deleteMany( deleteAllFilter)
-      .then(()=>{ //insert elements after deleting olds
-        (new ThisPersistentModel({ code : "EUR" , name : "Euro" , change : 1.0})).save();
-        (new ThisPersistentModel({ code : "USD" , name : "Dollar" , change : 1.1})).save();
-        (new ThisPersistentModel({ code : "GBP" , name : "Livre" , change : 0.9})).save();
-        (new ThisPersistentModel({ code : "JPY" , name : "Yen" , change : 123.7})).save();
-        resolve({action:"devises collection re-initialized in mongoDB database"})
-        })
-      .catch((err)=>{ console.log(JSON.stringify(err)) ; 
-                      reject({error : "cannot delete in database" , cause : err}); }  );
-  });
+      await ThisPersistentModelFn().deleteMany( deleteAllFilter);
+      await  (new ThisPersistentModelFn()({ code : "EUR" , name : "Euro" , change : 1.0})).save();
+      await  (new ThisPersistentModelFn()({ code : "USD" , name : "Dollar" , change : 1.1})).save();
+      await  (new ThisPersistentModelFn()({ code : "GBP" , name : "Livre" , change : 0.9})).save();
+      await  (new ThisPersistentModelFn()({ code : "JPY" , name : "Yen" , change : 123.7})).save();
+      return {action:"devises collection re-initialized in mongoDB database"}; //as Promise
+   } catch(ex){
+     console.log(JSON.stringify(ex));
+     throw ex;
+  }
 }
 
 function findById(id) {
-  return genericPromiseMongoose.findByIdWithModel(id,ThisPersistentModel);
+  return genericPromiseMongoose.findByIdWithModel(id,ThisPersistentModelFn());
 }
 
 //exemple of criteria : {} or { unitPrice: { $gte: 25 } } or ...
 function findByCriteria(criteria) {
-  return genericPromiseMongoose.findByCriteriaWithModel(criteria,ThisPersistentModel);
+  return genericPromiseMongoose.findByCriteriaWithModel(criteria,ThisPersistentModelFn());
 }
 
 function save(entity) {
-  return genericPromiseMongoose.saveWithModel(entity,ThisPersistentModel);
+  return genericPromiseMongoose.saveWithModel(entity,ThisPersistentModelFn());
 }
 
 function updateOne(newValueOfEntityToUpdate) {
-  return genericPromiseMongoose.updateOneWithModel(newValueOfEntityToUpdate,newValueOfEntityToUpdate.code,ThisPersistentModel);
+  return genericPromiseMongoose.updateOneWithModel(newValueOfEntityToUpdate,newValueOfEntityToUpdate.code,ThisPersistentModelFn());
 }
 
 function deleteOne(idOfEntityToDelete) {
-  return genericPromiseMongoose.deleteOneWithModel(idOfEntityToDelete,ThisPersistentModel);
+  return genericPromiseMongoose.deleteOneWithModel(idOfEntityToDelete,ThisPersistentModelFn());
 }
 
 
-export default { ThisPersistentModel ,  reinit_db ,
-   findById , findByCriteria , save , updateOne ,  deleteOne};
+
+export default { ThisPersistentModelFn ,  reinit_db ,   findById , findByCriteria , save , updateOne ,  deleteOne};
