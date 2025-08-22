@@ -1,8 +1,17 @@
 import express from 'express';
 const apiRouter = express.Router();
-
-import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
 import deviseDao from './devise-dao-mongoose.js';
+import { statusCodeFromEx , nullOrEmptyObject , build_api_uris , 
+	    addDefaultPrivateReInitRoute ,
+	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
+	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
+
+const api_name="devise-api"
+const api_version="v1"
+const main_entities_name="devises" // main collection (entities name)  
+
+const api_uris = build_api_uris(api_name,api_version,main_entities_name);
+
 //deviseDao.ThisPersistentModelFn() //to use only for specific extra request (not in dao)
 
 //NB: les api axios ou fetch servent à appeler des WS REST avec des Promises
@@ -26,38 +35,58 @@ NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private 
 NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent" quand tout se passe bien
      via l'option facultative ?v=true (au sens verbose=true) la réponse sera 200/OK accompagné
      d'un message json
-
-NB3: les URLs sont exceptionnellement ici en deux versions (avec ou sans /tp/ pour que ça puisse fonctionner
-avec ou sans reverse-proxy dans un cadre très particulier de tp )	 
+	 
 */
 
 
 //*******************************************
 
-//exemple URL: http://localhost:8233/devise-api/v1/private/reinit
-apiRouter.route(['/devise-api/v1/private/reinit' , '/devise-api/v1/public/reinit' ,
-                '/devise-api/private/reinit' , '/devise-api/public/reinit' ])
-.get( async function(req , res  , next ) {
-	try{
-		let doneActionMessage = await deviseDao.reinit_db();
-		res.send(doneActionMessage);
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    } 
+apiRouter.route(['/devise-api/public/reinit' , //old bad public url (before v1)
+	'/devise-api/private/reinit',//old bad private url (before v1)
+	'/devise-api/v1/public/reinit' , //unsecure public url (for simple call :  TP)
+]) 
+.get( function(req,res){
+   res.redirect(`/devise-api/v1/private/reinit`); //new good restfull url (v1)
 });
 
+//exemple URL: http://localhost:8233/devise-api/v1/private/reinit
+addDefaultPrivateReInitRoute(apiRouter,deviseDao,api_uris)
+
+
+
+apiRouter.route(['/devise-api/public/devise/:id' ]) //old bad url (before v1)
+.get( function(req,res){
+   res.redirect(`/devise-api/v1/public/devises/${req.params.id}`); //new good restfull url (v1)
+});
 
 //exemple URL: http://localhost:8233/devise-api/v1/public/devises/EUR
-apiRouter.route(['/devise-api/v1/public/devises/:id' ,
-                 '/devise-api/public/devise/:id' ])
-.get( async function(req , res  , next ) {
-	var entityId = req.params.id;
-	try{
-		let devise = await deviseDao.findById( entityId);
-		res.send(devise);
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    } 
+/**
+ * @openapi
+ * /devise-api/v1/public/devises/{id}:
+ *   get:
+ *     description: devise by id/code
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: EUR
+ *     responses:
+ *       200:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Devise"
+ *         description: Returns Devise
+ *       404:
+ *         description: NOT_FOUND
+ */
+addDefaultGetByIdRoute(apiRouter,deviseDao,api_uris,"public")
+
+apiRouter.route(['/devise-api/public/devise' ]) //old bad url (before v1)
+.get( function(req,res){
+   res.redirect(`/devise-api/v1/public/devises`); //new good restfull url (v1)
 });
 
 //exemple URL: http://localhost:8233/devise-api/v1/public/devises (returning all devises)
@@ -66,24 +95,87 @@ apiRouter.route(['/devise-api/v1/public/devises/:id' ,
  * @openapi
  * /devise-api/v1/public/devises:
  *   get:
- *     description: get devises from criteria 
+ *     description: get devises from optional criteria (changeMini=)
+ *     parameters:
+ *       - name: changeMini
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: number
+ *           format: double
  *     responses:
  *       200:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/DeviseArray"
  *         description: devise list
  */
-apiRouter.route([ '/devise-api/v1/public/devises', '/devise-api/public/devise'  ])
-.get( async function(req , res  , next ) {
-	var changeMini = Number(req.query.changeMini);
-	var criteria=changeMini?{ change: { $gte: changeMini } }:{};
-	try{
-		let devises = await deviseDao.findByCriteria(criteria);
-		res.send(devises);
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    } 
-});
+addDefaultGetByCriteriaRoute(apiRouter,deviseDao,api_uris,"public",
+	(req)=>{const changeMini = Number(req.query.changeMini); 
+		    const  criteria=changeMini?{ change: { $gte: changeMini } }:{}; 
+			return criteria }
+)
 
-//exemple URL: http://localhost:8233/devise-api/v1/public/convert?amount=50&source=EUR&target=USD
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     ConvertResponse:
+ *       type: object
+ *       properties:
+ *         amount:
+ *           type: number
+ *           format: double
+ *           example : 100
+ *         source:
+ *           type: string
+ *           example : EUR
+ *         target:
+ *           type: string
+ *           example : USD
+ *         result:
+ *           type: number
+ *           format: double
+ *           example : 112
+ */
+
+//exemple URL: http://localhost:8233/devise-api/v1/public/convert?amount=50&source=EUR&target=
+/**
+ * @openapi
+ * /devise-api/v1/public/convert:
+ *   get:
+ *     description: return converted change
+ *     parameters:
+ *       - name: amount
+ *         in: query
+ *         required: true
+ *         example : 100
+ *         schema:
+ *           type: number
+ *           format: double
+ *       - name: source
+ *         in: query
+ *         required: true
+ *         example : EUR
+ *         schema:
+ *           type: string
+ *           description: "code of source devise"
+ *       - name: target
+ *         in: query
+ *         required: true
+ *         example : USD
+ *         schema:
+ *           type: string
+ *           description: "code of target devise"
+ *     responses:
+ *       200:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ConvertResponse"
+ *         description: converted change
+ */
 apiRouter.route([ '/devise-api/v1/public/convert' ,'/devise-api/public/convert'  ])
 .get( async  function(req , res  , next ) {
 	let montant = Number(req.query.amount);
@@ -105,61 +197,106 @@ apiRouter.route([ '/devise-api/v1/public/convert' ,'/devise-api/public/convert' 
 	}
 });
 
+apiRouter.route(['/devise-api/public/devise' , //old bad public url (before v1)
+	'/devise-api/private/devise',//old bad private url (before v1)
+	'/devise-api/v1/public/devises' , //unsecure public url (for simple call :  TP)
+]) 
+.post( function(req,res){
+   res.redirect(`/devise-api/v1/private/devises`); //new good restfull url (v1)
+});
 
 // http://localhost:8233/devise-api/v1/private/devises en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
-apiRouter.route([ '/devise-api/v1/private/devises', '/devise-api/v1/public/devises',
-				  '/devise-api/private/devise', '/devise-api/public/devise' ])
-.post(async function(req , res  , next ) {
-	let newEntity = req.body;
-	console.log("POST,newEntity="+JSON.stringify(newEntity));
-	if(nullOrEmptyObject(newEntity)) { res.status(400).send(); return; } //BAD REQUEST
-	try{
-		let savedEntity = await deviseDao.save(newEntity);
-		let id = newEntity.code ; //saved id (sometimes auto_incr id)
-		//NB: res.location('/devise/' + id) because some clients may send two calls:
-		//1. a post call to create new resource on server
-		//   the server respond 201 with Location: /devise/mxy in http response header
-		//2. the client may send a get request with /devise/mxy at url end to retreive full entity value
-		res.location('/devise/' + id).status(201).send(savedEntity);//201: successfully created
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    }
-});
+/**
+ * @openapi
+ * /devise-api/v1/private/devises:
+ *   post:
+ *     description: post a new devise
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/Devise"
+ *     responses:
+ *       201:
+ *         description: saved devise
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Devise"
+ *       500:
+ *         description: INTERNAL_SERVER_ERROR
+ */
+addDefaultPostRoute(apiRouter,deviseDao,api_uris,
+     (savedDevise)=>savedDevise.code 
+)
 
+//Redirection For bad old version (before v1)
+apiRouter.route(['/devise-api/public/devise/:id' , //old bad public url (before v1)
+	'/devise-api/private/devise/:id',//old bad private url (before v1)
+	'/devise-api/public/devise' , //old very bad public url (before v1)
+	'/devise-api/private/devise',//old very bad private url (before v1)
+	'/devise-api/v1/public/devises/:id' , //unsecure public url (for simple call :  TP)
+]) 
+.put( function(req,res){
+   let idRes = req.params.id;
+   let newValueOfEntityToUpdate = req.body;
+   if(idRes == undefined)
+	  idRes=newValueOfEntityToUpdate.code
+   res.redirect(`/devise-api/v1/private/devises/${idRes}`); //new good restfull url (v1)
+});
 
 
 //   http://localhost:8233/devise-api/v1/public/devises/EUR en mode PUT
 //ou http://localhost:8233/devise-api/v1/private/devises/EUR en mode PUT
 // avec { "code" : "USD" , "name" : "Dollar" , "change" : 1.123 } dans req.body
 // ou bien {  "name" : "Dollar" , "change" : 1.123 } dans req.body
-apiRouter.route([ '/devise-api/v1/public/devises/:id' , '/devise-api/v1/private/devises/:id' ,
-				  '/devise-api/private/devise',  '/devise-api/private/devise/:id' ,
-                  '/devise-api/public/devise', '/devise-api/public/devise/:id' ])
-.put( async function(req , res  , next ) {
-	let newValueOfEntityToUpdate = req.body;
-	console.log("PUT,newValueOfEntityToUpdate="+JSON.stringify(newValueOfEntityToUpdate));
-    if(nullOrEmptyObject(newValueOfEntityToUpdate)) { res.status(400).send(); return; } //BAD REQUEST 
-	//l'id de l'entity à mettre à jour en mode put peut soit être précisée en fin d'URL (solution conseillée)
-	//soit être précisée dans les données json de la partie body (exceptionnellement accepté)
-	//et si l'information est renseignée des 2 façons elle ne doit pas être incohérente:
-	let entityId = req.params.id; //may be found (as string) at end of URL
-	if(newValueOfEntityToUpdate.code != null && entityId != null 
-		&&  newValueOfEntityToUpdate.code != entityId ) { res.status(400).send(); return; } //BAD REQUEST (incoherent id)
-	if(newValueOfEntityToUpdate.code == null && entityId != null) newValueOfEntityToUpdate.code = entityId;
-	if(newValueOfEntityToUpdate.code != null && entityId == null ) entityId = newValueOfEntityToUpdate.code;
+/**
+ * @openapi
+ * /devise-api/v1/private/devises/{id}:
+ *   put:
+ *     description: update devise with existing id/code
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: JPY
+ *       - name: v
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: boolean
+ *         description: "verbose: to ask 200/updatedDevise (not 204/NO_CONTENT)"
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/Devise"
+ *     responses:
+ *       200:
+ *         description: updated devise
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Devise"
+ *       204:
+ *         description: NO_CONTENT (OK)
+ *       404:
+ *         description: NOT_FOUND
+ */
+addDefaultPutRoute(apiRouter,deviseDao,api_uris,
+	 (idRes,deviseToUpdate) => { deviseToUpdate.code = idRes; }
+)
 
-	let verbose = req.query.v=="true"; //verbose mode (default as false)
-	
-	try{
-		let updatedEntity = await deviseDao.updateOne(newValueOfEntityToUpdate);
-		if(verbose)
-		  res.send(updatedEntity); //200:OK with updated entity as Json response body
-		else
-		  res.status(204).send();//NO_CONTENT
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    }
+
+apiRouter.route(['/devise-api/public/devise/:id' , //old bad public url (before v1)
+	'/devise-api/private/devise/:id',//old bad private url (before v1)
+	'/devise-api/v1/public/devises/:id' , //unsecure public url (for simple call :  TP)
+]) 
+.delete( function(req,res){
+   res.redirect(`/devise-api/v1/private/devises/${req.params.id}`); //new good restfull url (v1)
 });
 
 
@@ -167,29 +304,31 @@ apiRouter.route([ '/devise-api/v1/public/devises/:id' , '/devise-api/v1/private/
 // http://localhost:8233/devise-api/v1/private/devises/EUR?v=true en mode DELETE
 /**
  * @openapi
- * /devise-api/v1/private/devises:
+ * /devise-api/v1/private/devises/{id}:
  *   delete:
  *     description: delete devise from code/id
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: DKK
+ *       - name: v
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: boolean
+ *         description: "verbose: to ask 200/message (not 204/NO_CONTENT)"
  *     responses:
+ *       200:
+ *         description : delete action json message with deletedId
  *       204:
  *         description: NO_CONTENT (OK)
+ *       404:
+ *         description: NOT_FOUND
  */
-apiRouter.route([ '/devise-api/v1/private/devises/:id', '/devise-api/v1/public/devises/:id' ,
-				  '/devise-api/private/devise/:id',   '/devise-api/public/devise/:id' ])
-.delete(   /*checkAuth.checkAuth ,*/async function(req , res  , next ) {
-	let entityId = req.params.id;
-	console.log("DELETE,entityId="+entityId);
-	let verbose = req.query.v=="true"; //verbose mode (default as false)
-	try{
-		let deleteActionMessage = await deviseDao.deleteOne(entityId);
-		if(verbose)
-		  res.send(deleteActionMessage);
-		else
-		  res.status(204).send();//NO_CONTENT
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    }
-});
+addDefaultDeleteRoute(apiRouter,deviseDao,api_uris)
 
 
 //*************************** appel du web service REST data.fixer.io

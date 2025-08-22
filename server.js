@@ -59,7 +59,7 @@ const options = {
       version: '1.0.0',
     },
   },
-  apis: ['*-routes.js'], // files containing annotations with @openapi
+  apis: ['*-routes.js' ,'*dao-mongoose.js' ], // files containing annotations with @openapi
 };
 const swaggerSpec = swaggerJSDoc(options);
 

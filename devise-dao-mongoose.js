@@ -19,6 +19,32 @@ function initMongooseWithSchemaAndModel () {
         change : Number
       });
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Devise:
+ *       type: object
+ *       properties:
+ *         code:
+ *           type: string
+ *           example : EUR
+ *         name:
+ *           type: string
+ *           example : Euro
+ *         change:
+ *           type: number
+ *           format: double
+ *           example : 1.0
+ * 
+ *     DeviseArray:
+ *       type: array
+ *       items:
+ *         $ref: "#/components/schemas/Devise"
+ *
+ */
+
+
       thisSchema.set('id',false); //no default virtual id alias for _id
       thisSchema.set('toJSON', { virtuals: true , 
                                    versionKey:false,

@@ -1,0 +1,6 @@
+[
+    {"name":"Euro_Test","change":1,"code":"EUR_T"},
+    {"name":"Dollar_Test","change":1.1,"code":"USD_T"},
+    {"name":"Livre_Test","change":0.9,"code":"GBP_T"},
+    {"name":"Yen_Test","change":123.7,"code":"JPY_T"}
+]
