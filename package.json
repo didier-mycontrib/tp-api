@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "mocha --exit --reporter spec",
+    "test": "mocha ./test/devise-api.spec.js --exit --reporter spec && mocha ./test/product-api.spec.js --exit --reporter spec",
     "start": "node server.js"
   },
   "author": "",

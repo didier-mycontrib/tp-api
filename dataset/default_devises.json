@@ -1,0 +1,6 @@
+[
+{ "code" : "EUR" , "name" : "Euro" , "change" : 1.0},
+{ "code" : "USD" , "name" : "Dollar" , "change" : 1.1},
+{ "code" : "GBP" , "name" : "Livre" , "change" : 0.9},
+{ "code" : "JPY" , "name" : "Yen" , "change" : 123.8}
+]

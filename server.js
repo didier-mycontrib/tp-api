@@ -51,19 +51,26 @@ if(withoutAuth!="yes"){
 	app.use(verifAuth.checkScopeForPrivatePath); //with OAuth2 autorization server (no effect in standaloneMode)
 }
 
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'qcm-api',
-      version: '1.0.0',
-    },
-  },
-  apis: ['*-routes.js' ,'*dao-mongoose.js' ], // files containing annotations with @openapi
+const options_devise_api = {
+  definition: {  openapi: '3.0.0',  info: {  title: 'devise-api',  version: '1.0.0'  }  },
+  apis: ['devise-api-routes.js' ,'devise-dao-mongoose.js' ], // files containing annotations with @openapi
 };
-const swaggerSpec = swaggerJSDoc(options);
+const deviseSwaggerSpec = swaggerJSDoc(options_devise_api);
+app.use('/devise-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(deviseSwaggerSpec)(...args));
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+const options_product_api = {
+  definition: {  openapi: '3.0.0',  info: {  title: 'product-api',  version: '1.0.0'  }  },
+  apis: ['product-api-routes.js' ,'product-dao-mongoose.js' ], // files containing annotations with @openapi
+};
+const productSwaggerSpec = swaggerJSDoc(options_product_api);
+app.use('/product-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(productSwaggerSpec)(...args));
+
+const options_standalone_user_api = {
+  definition: {  openapi: '3.0.0',  info: {  title: 'standalone-user-api',  version: '1.0.0'  }  },
+  apis: ['standalone-user-api-routes.js' ,'standalone-user-dao-mongoose.js' ], // files containing annotations with @openapi
+};
+const standaloneUserSwaggerSpec = swaggerJSDoc(options_standalone_user_api);
+app.use('/standalone-user-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(standaloneUserSwaggerSpec)(...args));
 
 
 

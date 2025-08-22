@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dbMongoose from './db-mongoose.js';
+import { readJsonTextFile } from './generic-file-util.js'
 import genericPromiseMongoose from './generic-promise-mongoose.js';//generic helper for entity model with  .id , ._id
 
 
@@ -23,6 +24,42 @@ function initMongooseWithSchemaAndModel () {
         newPassword: String  ,
         mainGroup : String
       });
+
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example : 618d53514e0720e69e2e54c8
+ *         username:
+ *           type: string
+ *           example : user1
+ *         firstName:
+ *           type: string
+ *           example : jean
+ *         lastName:
+ *           type: string
+ *           example: Bon
+ *         email:
+ *           type: string
+ *           example : "jean.Bon@worldcompany.com"
+ *         newPassword:
+ *           type: string
+ *           example : pwd1
+ *         mainGroup:
+ *           type: string
+ *           example : user_of_sandboxrealm
+ * 
+ *     UserArray:
+ *       type: array
+ *       items:
+ *         $ref: "#/components/schemas/User"
+ *
+ */      
      
       //NB: la partie "password" devrait idéalement jamais être stockée telle quelle
       // mais cryptée via bcrypt
@@ -43,20 +80,22 @@ function ThisPersistentModelFn(){
   return ThisPersistentModel;
 }
 
-function reinit_db(){
-  return new Promise( (resolve,reject)=>{
+async function reinit_db(){
+  try{
     const deleteAllFilter = { }
-    ThisPersistentModelFn().deleteMany( deleteAllFilter)
-                .then(()=>{ //insert elements after deleting olds
-                  (new ThisPersistentModelFn()({ username : "admin1" , newPassword : "pwd1" , firstName : "jean" , lastName : "Bon" , email : "jean.Bon@worldcompany.com" , mainGroup : "admin_of_sandboxrealm" })).save();
-                  (new ThisPersistentModelFn()({ username : "mgr1" , newPassword : "pwd1" , firstName : "axelle" , lastName : "Aire" , email : "axelle.aire@worldcompany.com" , mainGroup : "manager_of_sandboxrealm" })).save();
-                  (new ThisPersistentModelFn()({ username : "user1" , newPassword : "pwd1"  , firstName : "luc" , lastName : "Skywalker" , email : "luc.Skywalker@worldcompany.com" , mainGroup : "user_of_sandboxrealm" })).save();
-                  resolve({action:"users collection re-initialized in mongoDB database"})
-                  })
-                .catch((err)=>{ console.log(JSON.stringify(err)) ; 
-                                reject({error : "cannot delete in database" , cause : err}); }  );
-  });
+    await ThisPersistentModelFn().deleteMany( deleteAllFilter);
+
+    let entitiesFromFileDataSet = await readJsonTextFile("dataset/default_users.json");
+    for(let e of entitiesFromFileDataSet){
+        await  (new ThisPersistentModelFn()(e)).save();
+      }
+    return{action:"users collection re-initialized in mongoDB database"}; //as Promise
+   } catch(ex){
+     console.log(JSON.stringify(ex));
+     throw ex;
+  }
 }
+
 
 function findById(id) {
   return genericPromiseMongoose.findByIdWithModel(id,ThisPersistentModelFn());

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dbMongoose from './db-mongoose.js';
+import { readJsonTextFile } from './generic-file-util.js'
 import genericPromiseMongoose from './generic-promise-mongoose.js';//generic helper for entity model with  .id , ._id
 
 //NB: This is for current entity type ("Devise" or "Customer" or "Product" or ...)
@@ -65,10 +66,10 @@ async function reinit_db(){
     try {
       const deleteAllFilter = { }
       await ThisPersistentModelFn().deleteMany( deleteAllFilter);
-      await  (new ThisPersistentModelFn()({ code : "EUR" , name : "Euro" , change : 1.0})).save();
-      await  (new ThisPersistentModelFn()({ code : "USD" , name : "Dollar" , change : 1.1})).save();
-      await  (new ThisPersistentModelFn()({ code : "GBP" , name : "Livre" , change : 0.9})).save();
-      await  (new ThisPersistentModelFn()({ code : "JPY" , name : "Yen" , change : 123.7})).save();
+      let entitiesFromFileDataSet = await readJsonTextFile("dataset/default_devises.json");
+      for(let e of entitiesFromFileDataSet){
+        await  (new ThisPersistentModelFn()(e)).save();
+      }
       return {action:"devises collection re-initialized in mongoDB database"}; //as Promise
    } catch(ex){
      console.log(JSON.stringify(ex));

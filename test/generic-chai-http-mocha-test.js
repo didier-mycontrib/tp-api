@@ -1,11 +1,6 @@
 import { MongoDBContainer } from '@testcontainers/mongodb'
-import fs from 'fs/promises';
+import { readJsonTextFile } from '../generic-file-util.js'
 
-async function readJsonTextFile(fileName){
-  let data = await fs.readFile(fileName, 'utf8');
-  data = data.replace(/^\s+|\s+$/g, ''); //trim \n and ... at start or end of line if necessary
-  return JSON.parse(data);
-}
 
 //load main dataset from file and saved it via http/post requests
 export async function initMainDataSet(testContext){
@@ -61,7 +56,7 @@ export async function initMongodbContainer(){
 
 export function classicHttpCrudTest(testContext){
 
-  describe("rest api classic hhtp/crud tests", ()=>{
+  describe("rest api classic http/crud tests", ()=>{
   let mongodbContainer=null;//for integration-test (in jenkins or ...)
 
   let mainEntities = []; //main data-set

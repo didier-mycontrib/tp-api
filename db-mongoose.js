@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
-import fs from 'fs/promises';
-
-async function readBasicTextFile(fileName){
-	let data = await fs.readFile(fileName, 'utf8');
-	data = data.replace(/^\s+|\s+$/g, ''); //trim \n and ... at start or end of line if necessary
-	return data;
-}
+import { readBasicTextFile } from './generic-file-util.js'
 
 async function thisDbFn(){
    let mongoDbUrl = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017"; //by default

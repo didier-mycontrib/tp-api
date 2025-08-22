@@ -1,0 +1,5 @@
+[
+{ "username" : "admin1_test" , "newPassword" : "pwd1" , "firstName" : "jean" , "lastName" : "Bon" , "email" : "jean.Bon@worldcompany.com" , "mainGroup" : "admin_of_sandboxrealm" },
+{ "username" : "mgr1_test" , "newPassword" : "pwd1" , "firstName" : "axelle" , "lastName" : "Aire" , "email" : "axelle.aire@worldcompany.com" , "mainGroup" : "manager_of_sandboxrealm" },
+{ "username" : "user1_test" , "newPassword" : "pwd1"  , "firstName" : "luc" , "lastName" : "Skywalker" , "email" : "luc.Skywalker@worldcompany.com" , "mainGroup" : "user_of_sandboxrealm" }
+]

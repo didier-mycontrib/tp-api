@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dbMongoose from './db-mongoose.js';
+import { readJsonTextFile } from './generic-file-util.js'
 import genericPromiseMongoose from './generic-promise-mongoose.js';//generic helper for entity model with  .id , ._id
 
 
@@ -19,6 +20,32 @@ function initMongooseWithSchemaAndModel () {
         label: String,
         price : Number
       });
+
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Product:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example : 618d53514e0720e69e2e54c8
+ *         label:
+ *           type: string
+ *           example : cahier
+ *         price:
+ *           type: number
+ *           format: double
+ *           example : 5.5
+ * 
+ *     ProductArray:
+ *       type: array
+ *       items:
+ *         $ref: "#/components/schemas/Product"
+ *
+ */
+    
       thisSchema.set('id',true); //virtual id alias as string for _id
       thisSchema.set('toJSON', { virtuals: true , 
                                    versionKey:false,
@@ -35,18 +62,20 @@ function ThisPersistentModelFn(){
   return ThisPersistentModel;
 }
 
-function reinit_db(){
-  return new Promise( (resolve,reject)=>{
+async function reinit_db(){
+  try{
     const deleteAllFilter = { }
-    ThisPersistentModelFn().deleteMany( deleteAllFilter)
-                .then(()=>{ //insert elements after deleting olds
-                  (new ThisPersistentModelFn()({ _id : '618d53514e0720e69e2e54c8' ,label : "classeur" , price : 4.0 })).save();
-                  (new ThisPersistentModelFn()({ _id : '618d53514e0720e69e2e54c9' ,label : "cahier" , price : 2.1 })).save();
-                  resolve({action:"products collection re-initialized in mongoDB database"})
-                  })
-                .catch((err)=>{ console.log(JSON.stringify(err)) ; 
-                                reject({error : "cannot delete in database" , cause : err}); }  );
-  });
+    await ThisPersistentModelFn().deleteMany( deleteAllFilter);
+
+    let entitiesFromFileDataSet = await readJsonTextFile("dataset/default_products.json");
+    for(let e of entitiesFromFileDataSet){
+        await  (new ThisPersistentModelFn()(e)).save();
+      }
+    return{action:"products collection re-initialized in mongoDB database"}; //as Promise
+   } catch(ex){
+     console.log(JSON.stringify(ex));
+     throw ex;
+  }
 }
 
 function findById(id) {
