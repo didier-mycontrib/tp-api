@@ -40,6 +40,15 @@ export function build_api_uris(api_name,api_version,entities_name){
 	}
 }
 
+
+/*
+Quelques petits points à peut être peufiner/approfondir :
+   - redirections public--->private pour Tp ou debut dev
+   - si à la fois .id et .propUnique , get /:id?unique_username_as_id
+     ex: get, put, delete /user1?unique_property_name_as_id=username
+   - et cohérence entre tout cela ?
+*/
+
 export function addDefaultPrivateReInitRoute(apiRouter,dao,api_uris){
 	//exemple URL: .../xyz-api/v1/private/reinit
     apiRouter.route(`${api_uris.private_api_base_uri}/reinit`)
@@ -54,6 +63,28 @@ export function addDefaultPrivateReInitRoute(apiRouter,dao,api_uris){
 	});
 }
 
+//ex: methods=["get","put","delete"] or [ "post"] or ...
+export function addRedirectPublicToPrivateRoute(apiRouter,publicUrl,methods){
+	let privateUrl = publicUrl.replace(/public/,"private")
+    privateUrl = privateUrl.replace(/:id/,"${req.params.id}")
+    let route_handler_callback_as_string = " res.redirect( 307, `" + privateUrl + "`); "; //307 for coorect post redirect
+	let route_handler_callback = Function("req","res",route_handler_callback_as_string)
+    //console.log("route_handler_callback="+route_handler_callback)
+	for(const method of methods){
+		//console.log(`addRedirectPublicToPrivateRoute publicUrl=${publicUrl} method=${method} privateUrl=${privateUrl} route_handler_callback=${route_handler_callback} `)
+     if(method=='get')
+		apiRouter.route(publicUrl).get(route_handler_callback );
+	 else if(method=='post')
+		apiRouter.route(publicUrl).post( route_handler_callback );
+	 else if(method=='put')
+		apiRouter.route(publicUrl).put( route_handler_callback);
+	 else if(method=='delete')
+		apiRouter.route(publicUrl).delete( route_handler_callback);
+   }  
+	
+}
+
+
 export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optionalTransformFn){
 	//visibility = "private" or "public"
 	//optionalTransformFn = optional transformation function to apply in found entity before send
@@ -61,9 +92,23 @@ export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optiona
 	//ex: /xyz-api/v1/private/zzzs/:id
 	apiRouter.route(route_uri)
 	.get( async function(req , res  , next ) {
-		var idRes = req.params.id;
+		let idRes = req.params.id;
+		const unique_property_name_as_id = req.query.unique_property_name_as_id;
 		try{
-			let entity = await dao.findById( idRes);
+			let entity =null;
+			if(unique_property_name_as_id){
+				//idRes interprété comme unique valeur de la chose recherchée selon unique_property_name_as_id
+				//ex par username, par email, ...
+               let criteria={}; criteria[unique_property_name_as_id] = idRes;
+			   let entities = await dao.findByCriteria(criteria);
+			   if(entities.length==1)
+		         entity = entities[0];
+			   else 
+				throw {error : "NOT_FOUND" , reason : "no entity with "  +unique_property_name_as_id + "=" +  idRes}
+			}else{
+              //by default (idRes interprété par id/pk souvent générée automatiquement):
+			  entity =  await dao.findById( idRes);
+			}
 			if(optionalTransformFn){
 				optionalTransformFn(entity);
 			}
@@ -74,6 +119,7 @@ export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optiona
 	});
 
 }
+
 
 export function addDefaultGetByCriteriaRoute(apiRouter,dao,api_uris,visibility,criteriaExtractFn,optionalTransformFn){
 	//visibility = "private" or "public"
@@ -95,7 +141,10 @@ export function addDefaultGetByCriteriaRoute(apiRouter,dao,api_uris,visibility,c
 	});
 }
 
-export function addDefaultPostRoute(apiRouter,dao,api_uris,optionalExtractIdFn,optionalPreTransformFn){
+
+//async optionalUnicityTest may be operate a unicity test and may throw execption if case of conflict
+
+export function addDefaultPostRoute(apiRouter,dao,api_uris,optionalExtractIdFn,optionalPreTransformFn,optionalUnicityTest){
     const route_uri = api_uris.private_col_base_uri;
 	//ex: /xyz-api/v1/private/zzzs
 	apiRouter.route(route_uri)
@@ -104,6 +153,8 @@ export function addDefaultPostRoute(apiRouter,dao,api_uris,optionalExtractIdFn,o
 		console.log("posting  entity :" +JSON.stringify(entity));
 		if(nullOrEmptyObject(entity)) { res.status(400).send(); return; } //BAD REQUEST
 		try{
+			if(optionalUnicityTest)
+			   await optionalUnicityTest(entity);
 			if(optionalPreTransformFn)
 			   optionalPreTransformFn(entity);
 			let savedEntity = await dao.save(entity);
@@ -142,21 +193,32 @@ export function addDefaultPutRoute(apiRouter,dao,api_uris,optionalSetIdFn,option
 	});
 }
 
+//by default: delete by id (/:id) , 
+//if optionalUniquePropertyName not null , delete by optionalUniquePropertyName (at end of path)
 export function addDefaultDeleteRoute(apiRouter,dao,api_uris){
-    const route_uri = api_uris.private_with_id_base_uri;
-	//ex: /xyz-api/v1/private/zzzs/:id
+    let route_uri = api_uris.private_with_id_base_uri;
+	//ex: /xyz-api/v1/private/zzzs/:id or /xyz-api/v1/private/zzzs/:username or :email or ..
 	apiRouter.route(route_uri)
 	.delete( async function(req , res  , next ) {
-		var idRes = req.params.id;
+		const unique_property_name_as_id = req.query.unique_property_name_as_id;
+		let idRes = req.params.id;
 		//console.log("DELETE,idRes="+idRes);
 		let verbose = req.query.v=="true"; //verbose mode (default as false)
 		try{
-			let deleteActionMessage = await dao.deleteOne(idRes);
+			let deleteActionMessage="{}"
+			if(unique_property_name_as_id){
+			     let criteria={}; criteria[unique_property_name_as_id] = idRes;
+				 deleteActionMessage = await dao.ThisPersistentModelFn().deleteOne(criteria);
+			}else{
+				//delete by id by default
+				deleteActionMessage = await dao.deleteOne(idRes);
+			}
 			if(verbose)
 				res.send(deleteActionMessage);
 			else
 				res.status(204).send();//NO_CONTENT
 		} catch(ex){
+			console.log("addDefaultDeleteRoute, ex"+ex)
 			res.status(statusCodeFromEx(ex)).send(ex);
 		}
 	});

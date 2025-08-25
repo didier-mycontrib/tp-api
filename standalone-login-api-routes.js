@@ -1,5 +1,5 @@
 import express from 'express';
-import { statusCodeFromEx , nullOrEmptyObject } from "./generic-express-util.js";
+import { statusCodeFromEx , nullOrEmptyObject , addRedirectPublicToPrivateRoute } from "./generic-express-util.js";
 const apiRouter = express.Router();
 
 import userDao from './standalone-user-dao-mongoose.js';

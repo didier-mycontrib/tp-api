@@ -5,7 +5,7 @@ import productDao from './product-dao-mongoose.js';
 // productDao.ThisPersistentModelFn(); //to use only for specific extra request (not in dao)
 
 import { statusCodeFromEx , nullOrEmptyObject , build_api_uris , 
-	    addDefaultPrivateReInitRoute ,
+	    addDefaultPrivateReInitRoute , addRedirectPublicToPrivateRoute,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
@@ -38,21 +38,15 @@ NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent"
 
 //*******************************************
 
-apiRouter.route(['/product-api/public/reinit' , //old bad public url (before v1)
-	'/product-api/private/reinit',//old bad private url (before v1)
-	'/product-api/v1/public/reinit' , //unsecure public url (for simple call :  TP)
-]).get( function(req,res){
-   res.redirect(`/product-api/v1/private/reinit`); //new good restfull url (v1)
-});
+/* TP ONLY */
+addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/reinit",["get"])
+addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/products/:id",["delete","put"])
+addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/products",["post"])
+
 
 //exemple URL: http://localhost:8233/product-api/v1/public/
 addDefaultPrivateReInitRoute(apiRouter,productDao,api_uris)
 
-
-apiRouter.route(['/product-api/public/product/:id' ]) //old bad url (before v1)
-.get( function(req,res){
-   res.redirect(`/product-api/v1/public/products/${req.params.id}`); //new good restfull url (v1)
-});
 
 //exemple URL: http://localhost:8233/product-api/v1/public/product/618d53514e0720e69e2e54c8
 /**
@@ -79,11 +73,6 @@ apiRouter.route(['/product-api/public/product/:id' ]) //old bad url (before v1)
  */
 addDefaultGetByIdRoute(apiRouter,productDao,api_uris,"public")
 
-
-apiRouter.route(['/product-api/public/product' ]) //old bad url (before v1)
-.get( function(req,res){
-   res.redirect(`/product-api/v1/public/products`); //new good restfull url (v1)
-});
 
 // exemple URL: http://localhost:8233/product-api/v1/public/products
 // returning all products if no ?minPrice
@@ -116,14 +105,6 @@ addDefaultGetByCriteriaRoute(apiRouter,productDao,api_uris,"public",
 
 
 
-apiRouter.route(['/product-api/public/product' , //old bad public url (before v1)
-	'/product-api/private/product',//old bad private url (before v1)
-	'/product-api/v1/public/products' , //unsecure public url (for simple call :  TP)
-]) 
-.post( function(req,res){
-   res.redirect(`/product-api/v1/private/products`); //new good restfull url (v1)
-});
-
 // http://localhost:8233/product-api/v1/private/products en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
 /**
@@ -149,21 +130,6 @@ apiRouter.route(['/product-api/public/product' , //old bad public url (before v1
 addDefaultPostRoute(apiRouter,productDao,api_uris,
      (savedproduct)=>savedproduct.id 
 )
-
-//Redirection For bad old version (before v1)
-apiRouter.route(['/product-api/public/product/:id' , //old bad public url (before v1)
-	'/product-api/private/product/:id',//old bad private url (before v1)
-	'/product-api/public/product' , //old very bad public url (before v1)
-	'/product-api/private/product',//old very bad private url (before v1)
-	'/product-api/v1/public/products/:id' , //unsecure public url (for simple call :  TP)
-]) 
-.put( function(req,res){
-   let idRes = req.params.id;
-   let newValueOfEntityToUpdate = req.body;
-   if(idRes == undefined)
-	  idRes=newValueOfEntityToUpdate.code
-   res.redirect(`/product-api/v1/private/products/${idRes}`); //new good restfull url (v1)
-});
 
 
 //   http://localhost:8233/product-api/v1/public/products/EUR en mode PUT
@@ -208,15 +174,6 @@ apiRouter.route(['/product-api/public/product/:id' , //old bad public url (befor
 addDefaultPutRoute(apiRouter,productDao,api_uris,
 	 (idRes,productToUpdate) => { productToUpdate.code = idRes; }
 )
-
-
-apiRouter.route(['/product-api/public/product/:id' , //old bad public url (before v1)
-	'/product-api/private/product/:id',//old bad private url (before v1)
-	'/product-api/v1/public/products/:id' , //unsecure public url (for simple call :  TP)
-]) 
-.delete( function(req,res){
-   res.redirect(`/product-api/v1/private/products/${req.params.id}`); //new good restfull url (v1)
-});
 
 
 // http://localhost:8233/product-api/v1/private/products/EUR en mode DELETE

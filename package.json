@@ -5,7 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "mocha ./test/devise-api.spec.js --exit --reporter spec && mocha ./test/product-api.spec.js --exit --reporter spec",
+    "devise_test": "mocha ./test/devise-api.spec.js --exit --reporter spec",
+    "product_test": "mocha ./test/product-api.spec.js --exit --reporter spec",
+    "standalone_user_test": "mocha ./test/standalone-user-api.spec.js --exit --reporter spec",
+    "all_tests": "mocha ./test/all-api.spec.js --exit --reporter spec",
     "start": "node server.js"
   },
   "author": "",

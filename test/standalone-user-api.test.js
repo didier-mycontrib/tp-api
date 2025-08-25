@@ -1,25 +1,15 @@
-import {use} from  'chai';
-import chaiHttp  from 'chai-http';
 import { app , server } from '../server.js';
 import { initMongodbContainer , initMainDataSet , removeMainDataSet,
   classicHttpCrudTest } from './generic-chai-http-mocha-test.js';
-import { test } from 'mocha';
+
+import { chai , expect ,retreiveMyAppRequester } from './common-app-test.js'
 
 
 //NB: in script (.sh, .bat , ...) : set/export WITHOUT_AUTH=yes // undefined by default
 //WITHOUT THAT , security (auth check) will block private requests (post, ..)
+export function standaloneUserClassicTest(){
 
-const chai=use(chaiHttp); //configure chai to use chaiHttp
-//NB: run mocha with --exit option for good server exit after test execution
-
-const { expect } = chai;
-
-function retreiveMyAppRequester(){
-    return chai.request.execute(app);//"http://localhost:8230" or ...
-    //NB: this code may change in other chai,chaiHttp versions
-}
-
-let testContext = {
+  let testContext = {
   chai : chai,
   expect : expect,
   app : app,
@@ -40,4 +30,6 @@ let testContext = {
    }
 }
 
-classicHttpCrudTest(testContext);
+  classicHttpCrudTest(testContext);
+
+}

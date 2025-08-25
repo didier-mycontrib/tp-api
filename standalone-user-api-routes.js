@@ -3,10 +3,8 @@ const apiRouter = express.Router();
 import userDao from './standalone-user-dao-mongoose.js';
 //userDao.ThisPersistentModelFn(); //to use only for specific extra request (not in dao)
 
-
-
 import { statusCodeFromEx , nullOrEmptyObject , build_api_uris , 
-	    addDefaultPrivateReInitRoute ,
+	    addDefaultPrivateReInitRoute ,  addRedirectPublicToPrivateRoute,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
@@ -33,15 +31,11 @@ et ne dialogue pas avec un serveur oauth2/oidc
 
 
 //*******************************************
+/* TP ONLY */
+addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/reinit",["get"])
+addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/users/:id",["delete","put"])
+addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/users",["post"])
 
-
-
-apiRouter.route(['/standalone-user-api/public/reinit' , //old bad public url (before v1)
-	'/standalone-user-api/private/reinit',//old bad private url (before v1)
-	'/standalone-user-api/v1/public/reinit' , //unsecure public url (for simple call :  TP)
-]).get( function(req,res){
-   res.redirect(`/standalone-user-api/v1/private/reinit`); //new good restfull url (v1)
-});
 
 //exemple URL: http://localhost:8233/standalone-user-api/v1/public/reinit
 addDefaultPrivateReInitRoute(apiRouter,userDao,api_uris)
@@ -51,16 +45,22 @@ addDefaultPrivateReInitRoute(apiRouter,userDao,api_uris)
 //exemple URL: http://localhost:8233/standalone-user-api/v1/public/users/user1
 /**
  * @openapi
- * /standalone-user-api/v1/public/users/{username}:
+ * /standalone-user-api/v1/public/users/{id}:
  *   get:
- *     description: user by username
+ *     description: "user by id (or by username if .../user1?unique_property_name_as_id=username)"
  *     parameters:
- *       - name: username
+ *       - name: id
  *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         example: user1
+ *         example: "618d53514e0720e69e2e54c8 or user1"
+ *       - name: unique_property_name_as_id
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: "to search/find a unique user by unique username (instead of by unique generated id)"
  *     responses:
  *       200:
  *         content:
@@ -71,28 +71,7 @@ addDefaultPrivateReInitRoute(apiRouter,userDao,api_uris)
  *       404:
  *         description: NOT_FOUND
  */
-
-apiRouter.route([ '/standalone-user-api/v1/public/users/:username' ,
-				'/standalone-user-api/public/user/:username' ])
-.get( async function(req , res  , next ) {
-	var username = req.params.username;
-	let criteria={ username : username };
-	try{
-		let users = await userDao.findByCriteria(criteria);
-		console.log("users="+JSON.stringify(users));
-		if(users.length>=1)
-		    res.send(users[0]);
-		else
-		   res.status(404).send({error : "NOT_FOUND" , reason : "no user with username="+username});
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    } 
-});
-
-apiRouter.route(['/standalone-user-api/public/user' ]) //old bad url (before v1)
-.get( function(req,res){
-   res.redirect(`/standalone-user-api/v1/public/users`); //new good restfull url (v1)
-});
+addDefaultGetByIdRoute(apiRouter,userDao,api_uris,"public")
 
 //exemple URL: http://localhost:8233/standalone-user-api/v1/public/users (returning all user accounts)
 /**
@@ -134,42 +113,18 @@ addDefaultGetByCriteriaRoute(apiRouter,userDao,api_uris,"public")
  *       500:
  *         description: INTERNAL_SERVER_ERROR
  */
-apiRouter.route(['/standalone-user-api/v1/private/users' ,
-				'/standalone-user-api/private/user',
-			    '/standalone-user-api/v1/public/users' ,
-				'/standalone-user-api/public/user'])
-.post(async function(req , res  , next ) {
-	let newEntity = req.body;
-	console.log("POST,newEntity="+JSON.stringify(newEntity));
-	if(nullOrEmptyObject(newEntity)) { res.status(400).send(); return; } //BAD REQUEST
-	try{
-		let criteriaTestDoublon={ username : newEntity.username };
+addDefaultPostRoute(apiRouter,userDao,api_uris,
+	 (savedUser)=>savedUser.id,
+	 null /* no preTranformFn*/ ,
+	 async (user)=>{
+		let criteriaTestDoublon={ username : user.username };
 		let usersWithSameUsername = await userDao.findByCriteria(criteriaTestDoublon);
 		if(usersWithSameUsername.length>=1){
-			res.status(409).send({"error":"CONFLICT","reason":"already one user with username="+newEntity.username});
-		}else{
-			let savedEntity = await userDao.save(newEntity);
-			res.status(201).send(savedEntity);//201: successfully created
+			throw {"error":"CONFLICT","reason":"already one user with username="+user.username};
 		}
-    } catch(ex){
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    }
-});
+	 } /* optionalUnicityTest */ 
+)
 
-//Redirection For bad old version (before v1)
-apiRouter.route(['/standalone-user-api/public/user/:id' , //old bad public url (before v1)
-	'/standalone-user-api/private/user/:id',//old bad private url (before v1)
-	'/standalone-user-api/public/user' , //old very bad public url (before v1)
-	'/standalone-user-api/private/user',//old very bad private url (before v1)
-	'/standalone-user-api/v1/public/users/:id' , //unsecure public url (for simple call :  TP)
-]) 
-.put( function(req,res){
-   let idRes = req.params.id;
-   let newValueOfEntityToUpdate = req.body;
-   if(idRes == undefined)
-	  idRes=newValueOfEntityToUpdate.code
-   res.redirect(`/standalone-user-api/v1/private/users/${idRes}`); //new good restfull url (v1)
-});
 
 
 // http://localhost:8233/standalone-user-api/v1/public/users/.... en mode PUT
@@ -210,24 +165,30 @@ apiRouter.route(['/standalone-user-api/public/user/:id' , //old bad public url (
  *         description: NOT_FOUND
  */
 addDefaultPutRoute(apiRouter,userDao,api_uris,
-	 (idRes,userToUpdate) => { userToUpdate.code = idRes; }
+	 (idRes,userToUpdate) => { userToUpdate.id = idRes; }
 )
 
 
 
-// http://localhost:8233/standalone-user-api/v1/public/users/user1 en mode DELETE
+// http://localhost:8233/standalone-user-api/v1/private/users/user1 en mode DELETE
 /**
  * @openapi
- * /standalone-user-api/v1/private/users/{username}:
+ * /standalone-user-api/v1/private/users/{id}:
  *   delete:
- *     description: delete user from username
+ *     description: delete user from id (by default) or by username (if ?unique_property_name_as_id=username)
  *     parameters:
- *       - name: username
+ *       - name: id
  *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         example: user1
+ *         example: 618d53514e0720e69e2e54c8 or user1
+ *       - name: unique_property_name_as_id
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: "to search/find a userto delete by unique username (instead of by unique generated id)"
  *       - name: v
  *         in: query
  *         required: false
@@ -242,26 +203,7 @@ addDefaultPutRoute(apiRouter,userDao,api_uris,
  *       404:
  *         description: NOT_FOUND
  */
-apiRouter.route(['/standalone-user-api/v1/public/users/:username',
-				'/standalone-user-api/public/user/:username',
-			    '/standalone-user-api/v1/private/users/:username',
-				'/standalone-user-api/private/user/:username' ])
-.delete( async function(req , res  , next ) {
-	var username = req.params.username;
-	console.log("DELETE,username="+username);
-	let noVerbose = req.query.v=="false"; //verbose mode (default as true)
-	try{
-		let deleteActionMessage = await userDao.ThisPersistentModelFn().deleteOne({username: username});
-		if(!noVerbose)
-		  res.send(deleteActionMessage);
-		else
-		  res.status(204).send();//NO_CONTENT
-    } catch(ex){
-		console.log("delete standalone-user :" + ex)
-	    res.status(statusCodeFromEx(ex)).send(ex);
-    }
-});
-
+addDefaultDeleteRoute(apiRouter,userDao,api_uris) //search and delete by unique username
 
 
 export  default { apiRouter };

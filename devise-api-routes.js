@@ -2,7 +2,7 @@ import express from 'express';
 const apiRouter = express.Router();
 import deviseDao from './devise-dao-mongoose.js';
 import { statusCodeFromEx , nullOrEmptyObject , build_api_uris , 
-	    addDefaultPrivateReInitRoute ,
+	    addDefaultPrivateReInitRoute , addRedirectPublicToPrivateRoute ,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
@@ -41,23 +41,20 @@ NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent"
 
 //*******************************************
 
-apiRouter.route(['/devise-api/public/reinit' , //old bad public url (before v1)
-	'/devise-api/private/reinit',//old bad private url (before v1)
-	'/devise-api/v1/public/reinit' , //unsecure public url (for simple call :  TP)
-]) 
-.get( function(req,res){
-   res.redirect(`/devise-api/v1/private/reinit`); //new good restfull url (v1)
-});
+/* TP ONLY */
+addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/reinit",["get"])
+addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/devises/:id",["delete","put"])
+addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/devises",["post"])
 
 //exemple URL: http://localhost:8233/devise-api/v1/private/reinit
 addDefaultPrivateReInitRoute(apiRouter,deviseDao,api_uris)
 
-
-
-apiRouter.route(['/devise-api/public/devise/:id' ]) //old bad url (before v1)
+/*
+apiRouter.route(['/devise-api/v1/public/devises/:id' ]) //old bad url (before v1)
 .get( function(req,res){
-   res.redirect(`/devise-api/v1/public/devises/${req.params.id}`); //new good restfull url (v1)
+   res.redirect(`/devise-api/v1/private/devises/${req.params.id}`); //new good restfull url (v1)
 });
+*/
 
 //exemple URL: http://localhost:8233/devise-api/v1/public/devises/EUR
 /**
@@ -84,10 +81,6 @@ apiRouter.route(['/devise-api/public/devise/:id' ]) //old bad url (before v1)
  */
 addDefaultGetByIdRoute(apiRouter,deviseDao,api_uris,"public")
 
-apiRouter.route(['/devise-api/public/devise' ]) //old bad url (before v1)
-.get( function(req,res){
-   res.redirect(`/devise-api/v1/public/devises`); //new good restfull url (v1)
-});
 
 //exemple URL: http://localhost:8233/devise-api/v1/public/devises (returning all devises)
 //             http://localhost:8233/devise-api/v1/public/devises?changeMini=1.05
@@ -197,13 +190,7 @@ apiRouter.route([ '/devise-api/v1/public/convert' ,'/devise-api/public/convert' 
 	}
 });
 
-apiRouter.route(['/devise-api/public/devise' , //old bad public url (before v1)
-	'/devise-api/private/devise',//old bad private url (before v1)
-	'/devise-api/v1/public/devises' , //unsecure public url (for simple call :  TP)
-]) 
-.post( function(req,res){
-   res.redirect(`/devise-api/v1/private/devises`); //new good restfull url (v1)
-});
+
 
 // http://localhost:8233/devise-api/v1/private/devises en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
@@ -230,21 +217,6 @@ apiRouter.route(['/devise-api/public/devise' , //old bad public url (before v1)
 addDefaultPostRoute(apiRouter,deviseDao,api_uris,
      (savedDevise)=>savedDevise.code 
 )
-
-//Redirection For bad old version (before v1)
-apiRouter.route(['/devise-api/public/devise/:id' , //old bad public url (before v1)
-	'/devise-api/private/devise/:id',//old bad private url (before v1)
-	'/devise-api/public/devise' , //old very bad public url (before v1)
-	'/devise-api/private/devise',//old very bad private url (before v1)
-	'/devise-api/v1/public/devises/:id' , //unsecure public url (for simple call :  TP)
-]) 
-.put( function(req,res){
-   let idRes = req.params.id;
-   let newValueOfEntityToUpdate = req.body;
-   if(idRes == undefined)
-	  idRes=newValueOfEntityToUpdate.code
-   res.redirect(`/devise-api/v1/private/devises/${idRes}`); //new good restfull url (v1)
-});
 
 
 //   http://localhost:8233/devise-api/v1/public/devises/EUR en mode PUT
@@ -290,14 +262,6 @@ addDefaultPutRoute(apiRouter,deviseDao,api_uris,
 	 (idRes,deviseToUpdate) => { deviseToUpdate.code = idRes; }
 )
 
-
-apiRouter.route(['/devise-api/public/devise/:id' , //old bad public url (before v1)
-	'/devise-api/private/devise/:id',//old bad private url (before v1)
-	'/devise-api/v1/public/devises/:id' , //unsecure public url (for simple call :  TP)
-]) 
-.delete( function(req,res){
-   res.redirect(`/devise-api/v1/private/devises/${req.params.id}`); //new good restfull url (v1)
-});
 
 
 // http://localhost:8233/devise-api/v1/private/devises/EUR en mode DELETE
@@ -359,8 +323,7 @@ async function  callFixerIoWebServiceWithAxios(){
 }//end of callFixerIoWebServiceWithAxios()
 
 //http://localhost:8233/devise-api/v1/private/refresh
-apiRouter.route(['/devise-api/v1/public/refresh','/devise-api/v1/private/refresh',
-                 '/devise-api/private/refresh' , '/devise-api/public/refresh'  ])
+apiRouter.route(['/devise-api/v1/public/refresh','/devise-api/v1/private/refresh' ])
 .get( async function(req , res  , next ) {
 	try {
 		let respData = await callFixerIoWebServiceWithAxios();

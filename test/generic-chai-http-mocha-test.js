@@ -3,7 +3,7 @@ import { readJsonTextFile } from '../generic-file-util.js'
 
 
 //load main dataset from file and saved it via http/post requests
-export async function initMainDataSet(testContext){
+export async function initMainDataSet(testContext ){
    let listeSavedEntities=[];
    let entitiesFromFileDataSet = await readJsonTextFile(testContext.mainDataSetFilePath);
    console.log("entitiesFromFileDataSet="+JSON.stringify(entitiesFromFileDataSet))
@@ -54,7 +54,7 @@ export async function initMongodbContainer(){
      return mongodbContainer;
 }
 
-export function classicHttpCrudTest(testContext){
+export function classicHttpCrudTest(testContext,mySpecificSubGroupTests){
 
   describe("rest api classic http/crud tests", ()=>{
   let mongodbContainer=null;//for integration-test (in jenkins or ...)
@@ -68,6 +68,7 @@ export function classicHttpCrudTest(testContext){
      console.log("initialisations before all tests of devise-api.spec (dataset or ...)");
     //insertion d'un jeu de données via http call:
     mainEntities = await initMainDataSet(testContext);
+    testContext.mainEntities=mainEntities;
       
     
   }).timeout(800000); //grande valeur de timeout car premier démarrage lent (éventuelle téléchargement de l'image docker)
@@ -127,6 +128,8 @@ export function classicHttpCrudTest(testContext){
       mainEntities.push(entityToUpdateFromFileDataSet); //add to mainEntities list for automatic remove at after() stage of test
     });
 
+    if(mySpecificSubGroupTests)
+      describe("specifics rest api tests" , mySpecificSubGroupTests)
 
   });
 
