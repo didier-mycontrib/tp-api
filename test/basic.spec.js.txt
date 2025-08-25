@@ -1,13 +1,77 @@
 import  { expect } from 'chai'; //but not import chai from 'chai' !!!
 
 describe("my basic tests", ()=>{
+
+	let gg = null;
+
+	before(()=>{
+		gg="debut_niv1"
+		console.log(`before, gg=${gg}`)
+	})
+
+	after(()=>{
+		gg="fin_niv1"
+		console.log(`after, gg=${gg}`)
+	})
+
+	describe("sub_niveau2a",()=>{
+
+		let g1 = null;
+
+		before(()=>{
+		g1="debut_niv2a"
+		console.log(`before, g1=${g1}`)
+	    })
+
+		after(()=>{
+			g1="fin_niv2a"
+			console.log(`after, g1=${g1}`)
+		})
+
+
+		it("1+1==2", function() {
+			let x=1;let y=1;let z=x+y;
+			console.log(`x=${x} y=${y} z=x+y=${z}`);
+			expect(z).to.equals(2);
+        });
+
+		it("2+2==4", function() {
+			let x=2;let y=2;let z=x+y;
+			console.log(`x=${x} y=${y} z=x+y=${z}`);
+			expect(z).to.equals(4);
+        });
+
+	});
+
+	describe("sub_niveau2b",()=>{
+
+		let g2 = null;
+
+		before(()=>{
+		g2="debut_niv2b"
+		console.log(`before, g2=${g2}`)
+	    })
+
+		after(()=>{
+			g2="fin_niv2b"
+			console.log(`after, g2=${g2}`)
+		})
+
+
+		it("1+2==3", function() {
+			let x=1;let y=2;let z=x+y;
+			console.log(`x=${x} y=${y} z=x+y=${z}`);
+			expect(z).to.equals(3);
+        });
+
+		it("3+2==5", function() {
+			let x=3;let y=2;let z=x+y;
+			console.log(`x=${x} y=${y} z=x+y=${z}`);
+			expect(z).to.equals(5);
+        });
+
+	});
 	
-	it("1+2==3", function() {
-		let x=1
-		let y=2
-		let z=x+y;
-		console.log(`x=${x} y=${y} z=x+y=${z}`);
-		expect(z).to.equals(3);
-    });
+	
 	
 });

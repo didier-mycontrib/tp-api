@@ -1,18 +1,19 @@
 import { app , server } from '../server.js';
 import { initMongodbContainer , initMainDataSet , removeMainDataSet,
-  classicHttpCrudTest } from './generic-chai-http-mocha-test.js';
+  classicHttpCrudInnerTestObject } from './generic-chai-http-mocha-test.js';
 
 import { chai , expect ,retreiveMyAppRequester } from './common-app-test.js'
 
 
 //NB: in script (.sh, .bat , ...) : set/export WITHOUT_AUTH=yes // undefined by default
 //WITHOUT THAT , security (auth check) will block private requests (post, ..)
-export function standaloneUserClassicTest(){
+export  function standaloneUserClassicSubTestGroup(){
 
   let testContext = {
   chai : chai,
   expect : expect,
   app : app,
+  name : "standalone-user-api-test",
   httpRequesterFn : retreiveMyAppRequester ,
   mainDataSetFilePath : "test/dataset/users.json" ,
   entityToAddFilePath : "test/dataset/new_user.json" ,
@@ -30,6 +31,6 @@ export function standaloneUserClassicTest(){
    }
 }
 
-  classicHttpCrudTest(testContext);
+  return classicHttpCrudInnerTestObject(testContext);
 
 }

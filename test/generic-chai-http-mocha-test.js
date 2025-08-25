@@ -41,7 +41,7 @@ export async function removeMainDataSet(listeEntities,testContext){
 }
 
 export async function initMongodbContainer(){
-  let mongodbContainer=null;
+     let mongodbContainer=null;
      if(process.env.TEST_MODE=="IT"){
         try{
           mongodbContainer = await new MongoDBContainer("mongo:8.0.12").start()
@@ -54,34 +54,66 @@ export async function initMongodbContainer(){
      return mongodbContainer;
 }
 
-export function classicHttpCrudTest(testContext,mySpecificSubGroupTests){
-
-  describe("rest api classic http/crud tests", ()=>{
+export function firstLevelTestWithTestContainer(testSubGroups){
+  describe("rest api classic http/crud tests with testContainer if necessary", ()=>{
   let mongodbContainer=null;//for integration-test (in jenkins or ...)
+
+  before(async () =>{
+    console.log("init testContainer if necessary");
+    mongodbContainer=await initMongodbContainer(); //utile seulement en mode IT (avec jenkins ou ...)
+    
+  }).timeout(800000); //grande valeur de timeout car premier démarrage lent (éventuelle téléchargement de l'image docker)
+
+  after(async ()=>{
+    console.log("terminaison  within testContainer if necessary");
+    
+     if(process.env.TEST_MODE=="IT"){
+      //stop mongodbContainer (in integration test mode):
+     await mongodbContainer.stop();
+     }
+   
+  });
+
+
+  if(testSubGroups && testSubGroups.length > 0)
+    describe(testSubGroups[0].name , testSubGroups[0].testFn)
+
+  if(testSubGroups && testSubGroups.length > 1)
+    describe(testSubGroups[1].name , testSubGroups[1].testFn)
+
+  if(testSubGroups && testSubGroups.length > 2)
+    describe(testSubGroups[2].name , testSubGroups[2].testFn)
+  
+  if(testSubGroups && testSubGroups.length > 3)
+    describe(testSubGroups[3].name , testSubGroups[3].testFn)
+
+  });
+
+  
+}
+
+
+export function classicHttpCrudInnerTestObject(testContext,mySpecificSubGroupTests){
+return {name:"rest api classic http/crud tests "+testContext.name, 
+       testFn : ()=>{
 
   let mainEntities = []; //main data-set
   
 	before(async () =>{
 
-     mongodbContainer=await initMongodbContainer(); //utile seulement en mode IT (avec jenkins ou ...)
-  
+
      console.log("initialisations before all tests of devise-api.spec (dataset or ...)");
     //insertion d'un jeu de données via http call:
     mainEntities = await initMainDataSet(testContext);
     testContext.mainEntities=mainEntities;
-      
     
-  }).timeout(800000); //grande valeur de timeout car premier démarrage lent (éventuelle téléchargement de l'image docker)
+  });
 
   after(async ()=>{
     console.log("terminaison after all tests of devise-api.spec ");
     //delete main dataset:
     await removeMainDataSet(mainEntities,testContext);
 
-     if(process.env.TEST_MODE=="IT"){
-      //stop mongodbContainer (in integration test mode):
-     await mongodbContainer.stop();
-     }
   });
 	
 	 it("http get for retreive main dataset , status 200 and good size", async () =>{
@@ -130,7 +162,7 @@ export function classicHttpCrudTest(testContext,mySpecificSubGroupTests){
 
     if(mySpecificSubGroupTests)
       describe("specifics rest api tests" , mySpecificSubGroupTests)
-
-  });
+  }};
+ 
 
 }

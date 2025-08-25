@@ -1,6 +1,6 @@
 import { app , server } from '../server.js';
 import { initMongodbContainer , initMainDataSet , removeMainDataSet,
-  classicHttpCrudTest } from './generic-chai-http-mocha-test.js';
+   classicHttpCrudInnerTestObject , firstLevelTestWithTestContainer } from './generic-chai-http-mocha-test.js';
 
 import { chai , expect ,retreiveMyAppRequester } from './common-app-test.js'
 
@@ -8,12 +8,13 @@ import { chai , expect ,retreiveMyAppRequester } from './common-app-test.js'
 //NB: in script (.sh, .bat , ...) : set/export WITHOUT_AUTH=yes // undefined by default
 //WITHOUT THAT , security (auth check) will block private requests (post, ..)
 
-export function deviseClassicTest(){
+export function deviseClassicSubTestGroup(){
 
   let testContext = {
     chai : chai,
     expect : expect,
     app : app,
+    name : "devise-api-test",
     httpRequesterFn : retreiveMyAppRequester ,
     mainDataSetFilePath : "test/dataset/devises.json" ,
     entityToAddFilePath : "test/dataset/new_devise.json" ,
@@ -42,7 +43,10 @@ export function deviseClassicTest(){
       * can access testContext.mainEntities initialized by classicHttpCrudTest main describe block 
     */
 
-  //classicHttpCrudTest(testContext);
-  classicHttpCrudTest(testContext,mySpecificSubGroupTests);
+
+
+  return  classicHttpCrudInnerTestObject(testContext); 
+         //classicHttpCrudInnerTestObject(testContext,mySpecificSubGroupTests);
+  
 
 }
