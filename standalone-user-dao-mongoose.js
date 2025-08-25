@@ -64,7 +64,7 @@ function initMongooseWithSchemaAndModel () {
       //NB: la partie "password" devrait idéalement jamais être stockée telle quelle
       // mais cryptée via bcrypt
 
-      thisSchema.set('id',true); //no default virtual id alias for _id
+      thisSchema.set('id',true); // virtual id alias for _id
       thisSchema.set('toJSON', { virtuals: true , 
                                    versionKey:false,
                                    transform: function (doc, ret) {   delete ret._id;  }

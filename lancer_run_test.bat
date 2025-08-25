@@ -1,2 +1,2 @@
 set WITHOUT_AUTH=yes
-npm run test && pause
+npm run all_tests && pause
