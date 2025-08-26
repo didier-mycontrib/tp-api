@@ -87,6 +87,7 @@ async function reinit_db(){
 
     let entitiesFromFileDataSet = await readJsonTextFile("dataset/default_users.json");
     for(let e of entitiesFromFileDataSet){
+		 if(e.id) { e._id = e.id; delete e.id}
         await  (new ThisPersistentModelFn()(e)).save();
       }
     return{action:"users collection re-initialized in mongoDB database"}; //as Promise

@@ -132,10 +132,7 @@ addDefaultPostRoute(apiRouter,productDao,api_uris,
 )
 
 
-//   http://localhost:8233/product-api/v1/public/products/EUR en mode PUT
-//ou http://localhost:8233/product-api/v1/private/products/EUR en mode PUT
-// avec { "code" : "USD" , "name" : "Dollar" , "change" : 1.123 } dans req.body
-// ou bien {  "name" : "Dollar" , "change" : 1.123 } dans req.body
+
 /**
  * @openapi
  * /product-api/v1/private/products/{id}:
@@ -172,7 +169,7 @@ addDefaultPostRoute(apiRouter,productDao,api_uris,
  *         description: NOT_FOUND
  */
 addDefaultPutRoute(apiRouter,productDao,api_uris,
-	 (idRes,productToUpdate) => { productToUpdate.code = idRes; }
+	 (idRes,productToUpdate) => { productToUpdate.id = idRes; }
 )
 
 
