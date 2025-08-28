@@ -42,7 +42,7 @@ Cette authentification pourra être effectuée de 2 manières:
 
 =============
 NB: une version de ce serveur est normalement accessible en ligne via l'URL suivante:
-https://www.d-defrance.fr/tp/tp-api-html/index.html
+https://www.d-defrance.fr/tp-api-html/index.html
 
 ============
 NB: ce serveur est compatible avec l'application angular "tp-app"
