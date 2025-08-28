@@ -11,10 +11,10 @@ import jwtUtil from './jwt-util.js';
 
 //submitting authRequest (login) via post
 //response = authResponse with token:
-// http://localhost:8233/standalone-login-api/v1/public/auth en mode post
+// http://localhost:8233/tp/standalone-login-api/v1/public/auth en mode post
 // avec { "username" : "admin1" , "password" : "pwd1" } dans req.body
-apiRouter.route(['/standalone-login-api/v1/public/auth',
-                 '/standalone-login-api/public/auth' ])
+apiRouter.route(['/tp/standalone-login-api/v1/public/auth',
+                 '/tp/standalone-login-api/public/auth' ])
 .post(async function(req , res  , next ) {
 	let  authReq  =  req.body;
 	let  authResponse  = {username : authReq.username ,

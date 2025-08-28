@@ -52,25 +52,25 @@ if(withoutAuth!="yes"){
 }
 
 const options_devise_api = {
-  definition: {  openapi: '3.0.0',  info: {  title: 'devise-api',  version: '1.0.0'  }  },
+  definition: {  openapi: '3.0.0',  info: {  title: 'tp/devise-api',  version: 'v1'  }  },
   apis: ['devise-api-routes.js' ,'devise-dao-mongoose.js' ], // files containing annotations with @openapi
 };
 const deviseSwaggerSpec = swaggerJSDoc(options_devise_api);
-app.use('/devise-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(deviseSwaggerSpec)(...args));
-
+app.use('/tp/devise-api/v1/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(deviseSwaggerSpec)(...args));
+ 
 const options_product_api = {
-  definition: {  openapi: '3.0.0',  info: {  title: 'product-api',  version: '1.0.0'  }  },
+  definition: {  openapi: '3.0.0',  info: {  title: 'tp/product-api',  version: 'v1'  }  },
   apis: ['product-api-routes.js' ,'product-dao-mongoose.js' ], // files containing annotations with @openapi
 };
 const productSwaggerSpec = swaggerJSDoc(options_product_api);
-app.use('/product-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(productSwaggerSpec)(...args));
+app.use('/tp/product-api/v1/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(productSwaggerSpec)(...args));
 
 const options_standalone_user_api = {
-  definition: {  openapi: '3.0.0',  info: {  title: 'standalone-user-api',  version: '1.0.0'  }  },
+  definition: {  openapi: '3.0.0',  info: {  title: 'tp/standalone-user-api',  version: 'v1'  }  },
   apis: ['standalone-user-api-routes.js' ,'standalone-user-dao-mongoose.js' ], // files containing annotations with @openapi
 };
 const standaloneUserSwaggerSpec = swaggerJSDoc(options_standalone_user_api);
-app.use('/standalone-user-api/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(standaloneUserSwaggerSpec)(...args));
+app.use('/tp/standalone-user-api/v1/api-docs', swaggerUi.serve, (...args) => swaggerUi.setup(standaloneUserSwaggerSpec)(...args));
 
 
 

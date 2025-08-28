@@ -9,7 +9,7 @@ import { statusCodeFromEx , nullOrEmptyObject , build_api_uris ,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
-const api_name="product-api"
+const api_name="tp/product-api"
 const api_version="v1"
 const main_entities_name="products" // main collection (entities name)  
 
@@ -19,9 +19,6 @@ const api_uris = build_api_uris(api_name,api_version,main_entities_name);
 
 
 /*
-NB: la redirection https://www.d-defrance.fr/xyz-api
-     vers  http://localhost:8233/xyz-api est effectuée dans nginx.conf
-	 et donc pas besoin de /tp/... dans ce fichier
 	 
 Nouvelle convention d'URL :
 http://localhost:8233/product-api/v1/private/xyz en accès private (avec auth nécessaire)
@@ -38,20 +35,16 @@ NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent"
 
 //*******************************************
 
-/* TP ONLY */
-addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/reinit",["get"])
-addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/products/:id",["delete","put"])
-addRedirectPublicToPrivateRoute(apiRouter,"/product-api/v1/public/products",["post"])
 
 
-//exemple URL: http://localhost:8233/product-api/v1/public/
+//exemple URL: http://localhost:8233/tp/product-api/v1/public/
 addDefaultPrivateReInitRoute(apiRouter,productDao,api_uris)
 
 
-//exemple URL: http://localhost:8233/product-api/v1/public/product/618d53514e0720e69e2e54c8
+//exemple URL: http://localhost:8233/tp/product-api/v1/public/product/618d53514e0720e69e2e54c8
 /**
  * @openapi
- * /product-api/v1/public/products/{id}:
+ * /tp/product-api/v1/public/products/{id}:
  *   get:
  *     description: product by id
  *     parameters:
@@ -74,12 +67,12 @@ addDefaultPrivateReInitRoute(apiRouter,productDao,api_uris)
 addDefaultGetByIdRoute(apiRouter,productDao,api_uris,"public")
 
 
-// exemple URL: http://localhost:8233/product-api/v1/public/products
+// exemple URL: http://localhost:8233/tp/product-api/v1/public/products
 // returning all products if no ?minPrice
-// http://localhost:8233/product-api/v1/public/products?minPrice=1.
+// http://localhost:8233/tp/product-api/v1/public/products?minPrice=1.
 /**
  * @openapi
- * /product-api/v1/public/products:
+ * /tp/product-api/v1/public/products:
  *   get:
  *     description: get products from optional criteria (minPrice=)
  *     parameters:
@@ -105,11 +98,11 @@ addDefaultGetByCriteriaRoute(apiRouter,productDao,api_uris,"public",
 
 
 
-// http://localhost:8233/product-api/v1/private/products en mode post
+// http://localhost:8233/tp/product-api/v1/private/products en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
 /**
  * @openapi
- * /product-api/v1/private/products:
+ * /tp/product-api/v1/private/products:
  *   post:
  *     description: post a new product
  *     requestBody:
@@ -135,7 +128,7 @@ addDefaultPostRoute(apiRouter,productDao,api_uris,
 
 /**
  * @openapi
- * /product-api/v1/private/products/{id}:
+ * /tp/product-api/v1/private/products/{id}:
  *   put:
  *     description: update product with existing id
  *     parameters:
@@ -173,11 +166,11 @@ addDefaultPutRoute(apiRouter,productDao,api_uris,
 )
 
 
-// http://localhost:8233/product-api/v1/private/products/EUR en mode DELETE
-// http://localhost:8233/product-api/v1/private/products/EUR?v=true en mode DELETE
+// http://localhost:8233/tp/product-api/v1/private/products/EUR en mode DELETE
+// http://localhost:8233/tp/product-api/v1/private/products/EUR?v=true en mode DELETE
 /**
  * @openapi
- * /product-api/v1/private/products/{id}:
+ * /tp/product-api/v1/private/products/{id}:
  *   delete:
  *     description: delete product from id
  *     parameters:

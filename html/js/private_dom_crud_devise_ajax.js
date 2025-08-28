@@ -29,7 +29,7 @@ function displayMessage(txt){
 
 function loadDevisesWithAjax(){
     //************ CODE A ANALYSER ET COMPRENDRE EN TP ***************************
-    makeAjaxGetRequest("../devise-api/v1/public/devises" ,  function(texteReponse){
+    makeAjaxGetRequest("../tp/devise-api/v1/public/devises" ,  function(texteReponse){
         tabDevises = JSON.parse(texteReponse /* au format json string */);
         /* //old simulated values:
         tabDevises.push({code:'EUR' , name : 'Euro' , change : 1})
@@ -42,7 +42,7 @@ function loadDevisesWithAjax(){
 }
 
 function postNewDeviseWithAjax(nouvelleDevise){
-    makeAjaxPostRequest( "../devise-api/v1/private/devises" ,
+    makeAjaxPostRequest( "../tp/devise-api/v1/private/devises" ,
                         JSON.stringify(nouvelleDevise) ,  
                        afterPostNewDeviseWithAjaxCallback,errCallback); 
 }
@@ -58,7 +58,7 @@ function afterPostNewDeviseWithAjaxCallback(texteReponse){
 }
 
 function putNewValueOfExistingDeviseWithAjax(deviseToUpdate){
-    makeAjaxPutRequest("../devise-api/v1/private/devises/"+deviseToUpdate.code+"?v=true" ,
+    makeAjaxPutRequest("../tp/devise-api/v1/private/devises/"+deviseToUpdate.code+"?v=true" ,
                         JSON.stringify(deviseToUpdate) ,  
                         afterPutNewValueOfExistingDeviseWithAjaxCallback,errCallback);
 }
@@ -72,7 +72,7 @@ function deleteOldDeviseWithAjax(oldDevise){
     //************ A FAIRE EN TP ***************************
     // var deleteUrl = URL qui va bien avec le bon code devise a supprimer à la fin
     //***************************************
-    let deleteUrl= "../devise-api/v1/private/devises/" + oldDevise.code + "?v=true"
+    let deleteUrl= "../tp/devise-api/v1/private/devises/" + oldDevise.code + "?v=true"
     console.log("deleteUrl=" +deleteUrl)
     makeAjaxDeleteRequest(deleteUrl , afterDeleteOldDeviseWithAjaxCallback , errCallback);
 }

@@ -6,7 +6,7 @@ import { statusCodeFromEx , nullOrEmptyObject , build_api_uris ,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
-const api_name="devise-api"
+const api_name="tp/devise-api"
 const api_version="v1"
 const main_entities_name="devises" // main collection (entities name)  
 
@@ -21,14 +21,10 @@ import axios from 'axios';// npm install -s axios
 
 
 /*
-NB: la redirection https://www.d-defrance.fr/xyz-api
-     vers  http://localhost:8233/xyz-api est effectuée dans nginx.conf
-	 et donc pas besoin de /tp/... dans ce fichier
-
 
 Nouvelle convention d'URL :
-http://localhost:8233/devise-api/v1/private/xyz en accès private (avec auth nécessaire)
-http://localhost:8233/devise-api/v1/public/xyz en accès public (sans auth nécessaire)
+http://localhost:8233/tp/devise-api/v1/private/xyz en accès private (avec auth nécessaire)
+http://localhost:8233/tp/devise-api/v1/public/xyz en accès public (sans auth nécessaire)
 NB: dans vrai projet d'entreprise , public pour get pas confidentiel et private pour tout le reste
     ICI Exceptionnellement EN TP , presques toutes les URLS sont doublées : appelables en public et private
 
@@ -42,24 +38,42 @@ NB2: par défaut les requetes en mode DELETE ou PUT retourneront "204/NoContent"
 //*******************************************
 
 /* TP ONLY */
-addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/reinit",["get"])
-addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/devises/:id",["delete","put"])
-addRedirectPublicToPrivateRoute(apiRouter,"/devise-api/v1/public/devises",["post"])
+/* in prod/secure mode , public routes redirected to private route 
+   are blocked . It's work only in dev mode 
+*/
 
-//exemple URL: http://localhost:8233/devise-api/v1/private/reinit
+/*
+addRedirectPublicToPrivateRoute(apiRouter,"/tp/devise-api/v1/public/reinit",["get"])
+addRedirectPublicToPrivateRoute(apiRouter,"/tp/devise-api/v1/public/devises/:id",["delete","put"])
+addRedirectPublicToPrivateRoute(apiRouter,"/tp/devise-api/v1/public/devises",["post"])
+*/
+
+/*
+SOLUTION RETENUE pour le code générique "generic-express-util"
+devant fonctionner de DEV et en PROD (et en mode TP ou PAS).
+-----
+par défaut si api_uris.api ne commence pas par tp/ alors mode ordinaire strict:
+   - put,post,delete et reinit seulement en mode private
+si par contre api_uris.api commence pas par tp/ alors exceptionnellement:
+   - put,post,delete et reinit accessible à la fois en mode private et en mode public
+   (double uri , alias)
+
+*/
+
+//exemple URL: http://localhost:8233/tp/devise-api/v1/private/reinit
 addDefaultPrivateReInitRoute(apiRouter,deviseDao,api_uris)
 
 /*
-apiRouter.route(['/devise-api/v1/public/devises/:id' ]) //old bad url (before v1)
+apiRouter.route(['/tp/devise-api/v1/public/devises/:id' ]) //old bad url (before v1)
 .get( function(req,res){
-   res.redirect(`/devise-api/v1/private/devises/${req.params.id}`); //new good restfull url (v1)
+   res.redirect(`/tp/devise-api/v1/private/devises/${req.params.id}`); //new good restfull url (v1)
 });
 */
 
-//exemple URL: http://localhost:8233/devise-api/v1/public/devises/EUR
+//exemple URL: http://localhost:8233/tp/devise-api/v1/public/devises/EUR
 /**
  * @openapi
- * /devise-api/v1/public/devises/{id}:
+ * /tp/devise-api/v1/public/devises/{id}:
  *   get:
  *     description: devise by id/code
  *     parameters:
@@ -82,11 +96,11 @@ apiRouter.route(['/devise-api/v1/public/devises/:id' ]) //old bad url (before v1
 addDefaultGetByIdRoute(apiRouter,deviseDao,api_uris,"public")
 
 
-//exemple URL: http://localhost:8233/devise-api/v1/public/devises (returning all devises)
-//             http://localhost:8233/devise-api/v1/public/devises?changeMini=1.05
+//exemple URL: http://localhost:8233/tp/devise-api/v1/public/devises (returning all devises)
+//             http://localhost:8233/tp/devise-api/v1/public/devises?changeMini=1.05
 /**
  * @openapi
- * /devise-api/v1/public/devises:
+ * /tp/devise-api/v1/public/devises:
  *   get:
  *     description: get devises from optional criteria (changeMini=)
  *     parameters:
@@ -133,10 +147,10 @@ addDefaultGetByCriteriaRoute(apiRouter,deviseDao,api_uris,"public",
  *           example : 112
  */
 
-//exemple URL: http://localhost:8233/devise-api/v1/public/convert?amount=50&source=EUR&target=
+//exemple URL: http://localhost:8233/tp/devise-api/v1/public/convert?amount=50&source=EUR&target=
 /**
  * @openapi
- * /devise-api/v1/public/convert:
+ * /tp/devise-api/v1/public/convert:
  *   get:
  *     description: return converted change
  *     parameters:
@@ -169,7 +183,7 @@ addDefaultGetByCriteriaRoute(apiRouter,deviseDao,api_uris,"public",
  *               $ref: "#/components/schemas/ConvertResponse"
  *         description: converted change
  */
-apiRouter.route([ '/devise-api/v1/public/convert' ,'/devise-api/public/convert'  ])
+apiRouter.route([ '/tp/devise-api/v1/public/convert' ,'/tp/devise-api/public/convert'  ])
 .get( async  function(req , res  , next ) {
 	let montant = Number(req.query.amount);
 	let codeDeviseSource = req.query.source;
@@ -192,11 +206,11 @@ apiRouter.route([ '/devise-api/v1/public/convert' ,'/devise-api/public/convert' 
 
 
 
-// http://localhost:8233/devise-api/v1/private/devises en mode post
+// http://localhost:8233/tp/devise-api/v1/private/devises en mode post
 // avec { "code" : "mxy" , "name" : "monnaieXy" , "change" : 123 } dans req.body
 /**
  * @openapi
- * /devise-api/v1/private/devises:
+ * /tp/devise-api/v1/private/devises:
  *   post:
  *     description: post a new devise
  *     requestBody:
@@ -219,13 +233,13 @@ addDefaultPostRoute(apiRouter,deviseDao,api_uris,
 )
 
 
-//   http://localhost:8233/devise-api/v1/public/devises/EUR en mode PUT
-//ou http://localhost:8233/devise-api/v1/private/devises/EUR en mode PUT
+//   http://localhost:8233/tp/devise-api/v1/public/devises/EUR en mode PUT
+//ou http://localhost:8233/tp/devise-api/v1/private/devises/EUR en mode PUT
 // avec { "code" : "USD" , "name" : "Dollar" , "change" : 1.123 } dans req.body
 // ou bien {  "name" : "Dollar" , "change" : 1.123 } dans req.body
 /**
  * @openapi
- * /devise-api/v1/private/devises/{id}:
+ * /tp/devise-api/v1/private/devises/{id}:
  *   put:
  *     description: update devise with existing id/code
  *     parameters:
@@ -264,11 +278,11 @@ addDefaultPutRoute(apiRouter,deviseDao,api_uris,
 
 
 
-// http://localhost:8233/devise-api/v1/private/devises/EUR en mode DELETE
-// http://localhost:8233/devise-api/v1/private/devises/EUR?v=true en mode DELETE
+// http://localhost:8233/tp/devise-api/v1/private/devises/EUR en mode DELETE
+// http://localhost:8233/tp/devise-api/v1/private/devises/EUR?v=true en mode DELETE
 /**
  * @openapi
- * /devise-api/v1/private/devises/{id}:
+ * /tp/devise-api/v1/private/devises/{id}:
  *   delete:
  *     description: delete devise from code/id
  *     parameters:
@@ -323,7 +337,7 @@ async function  callFixerIoWebServiceWithAxios(){
 }//end of callFixerIoWebServiceWithAxios()
 
 //http://localhost:8233/devise-api/v1/private/refresh
-apiRouter.route(['/devise-api/v1/public/refresh','/devise-api/v1/private/refresh' ])
+apiRouter.route(['/tp/devise-api/v1/public/refresh','/tp/devise-api/v1/private/refresh' ])
 .get( async function(req , res  , next ) {
 	try {
 		let respData = await callFixerIoWebServiceWithAxios();

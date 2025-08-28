@@ -19,7 +19,7 @@ function onLogin(evt){
 	document.getElementById("spanMsg").innerText="onLogin";
 	let authRequest = { username : document.getElementById("txtUsername").value,
 		                password : document.getElementById("txtPassword").value }
-    makeAjaxPostRequest("../standalone-login-api/v1/public/auth" ,
+    makeAjaxPostRequest("../tp/standalone-login-api/v1/public/auth" ,
 	                     JSON.stringify(authRequest), 
 						 authCallback , 
 						 errCallback);

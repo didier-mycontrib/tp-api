@@ -25,9 +25,9 @@ http://localhost:8233
 
 naviguer vers http://localhost:8233/html/public_index.html
 et déclencher 
-réinitialiser devises (http://localhost:8233/devise-api/public/reinit)
-réinitialiser produits (http://localhost:8233/product-api/public/reinit)
-réinitialiser standalone users (http://localhost:8233/standalone-user-api/public/reinit)
+réinitialiser devises (http://localhost:8233/tp/devise-api/public/reinit)
+réinitialiser produits (http://localhost:8233/tp/product-api/public/reinit)
+réinitialiser standalone users (http://localhost:8233/tp/standalone-user-api/public/reinit)
 pour initialiser un jeux de données dans la base de données mongodb. 
 
 =============

@@ -8,7 +8,7 @@ import { statusCodeFromEx , nullOrEmptyObject , build_api_uris ,
 	    addDefaultGetByIdRoute ,addDefaultGetByCriteriaRoute ,
 	    addDefaultDeleteRoute , addDefaultPostRoute , addDefaultPutRoute} from "./generic-express-util.js";
 
-const api_name="standalone-user-api"
+const api_name="tp/standalone-user-api"
 const api_version="v1"
 const main_entities_name="users" // main collection (entities name)  
 
@@ -18,34 +18,27 @@ const api_uris = build_api_uris(api_name,api_version,main_entities_name);
 /*
 NB: la redirection https://www.d-defrance.fr/xyz-api
      vers  http://localhost:8233/xyz-api est effectuée dans nginx.conf
-	 et donc pas besoin de /tp/... dans ce fichier
 	 
 NB: cette api (plan B) est volontairement compatible avec l'api
 http://localhost:8232/user-api/public/xyz en accès public (sans auth nécessaire)
 -----
 cette version "standalone" fonctionne avec une collection de "users" dans mongoDB
 et ne dialogue pas avec un serveur oauth2/oidc
-
 	
 */
 
 
-//*******************************************
-/* TP ONLY */
-addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/reinit",["get"])
-addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/users/:id",["delete","put"])
-addRedirectPublicToPrivateRoute(apiRouter,"/standalone-user-api/v1/public/users",["post"])
 
 
-//exemple URL: http://localhost:8233/standalone-user-api/v1/public/reinit
+//exemple URL: http://localhost:8233/tp/standalone-user-api/v1/public/reinit
 addDefaultPrivateReInitRoute(apiRouter,userDao,api_uris)
 
 
 
-//exemple URL: http://localhost:8233/standalone-user-api/v1/public/users/user1
+//exemple URL: http://localhost:8233/tp/standalone-user-api/v1/public/users/user1
 /**
  * @openapi
- * /standalone-user-api/v1/public/users/{id}:
+ * /tp/standalone-user-api/v1/public/users/{id}:
  *   get:
  *     description: "user by id (or by username if .../user1?unique_property_name_as_id=username)"
  *     parameters:
@@ -73,10 +66,10 @@ addDefaultPrivateReInitRoute(apiRouter,userDao,api_uris)
  */
 addDefaultGetByIdRoute(apiRouter,userDao,api_uris,"public")
 
-//exemple URL: http://localhost:8233/standalone-user-api/v1/public/users (returning all user accounts)
+//exemple URL: http://localhost:8233/tp/standalone-user-api/v1/public/users (returning all user accounts)
 /**
  * @openapi
- * /standalone-user-api/v1/public/users:
+ * /tp/standalone-user-api/v1/public/users:
  *   get:
  *     description: get users from optional criteria 
  *     responses:
@@ -91,11 +84,11 @@ addDefaultGetByCriteriaRoute(apiRouter,userDao,api_uris,"public")
 
 
 
-// http://localhost:8233/standalone-user-api/v1/public/users en mode post
+// http://localhost:8233/tp/standalone-user-api/v1/public/users en mode post
 // avec {"firstName":"joe","lastName":"Dalton","email":"joe.dalton@jail.com","username":"user4","groups":["user_of_myrealm"],"newPassword":"pwd4"} dans req.body
 /**
  * @openapi
- * /standalone-user-api/v1/private/users:
+ * /tp/standalone-user-api/v1/private/users:
  *   post:
  *     description: post a new user
  *     requestBody:
@@ -127,11 +120,11 @@ addDefaultPostRoute(apiRouter,userDao,api_uris,
 
 
 
-// http://localhost:8233/standalone-user-api/v1/public/users/.... en mode PUT
+// http://localhost:8233/tp/standalone-user-api/v1/public/users/.... en mode PUT
 // avec {"firstName":"joe","lastName":"Dalton","email":"joe.dalton@jail.com","username":"user4","groups":["user_of_myrealm"],"newPassword":"pwd4"} dans req.body
 /**
  * @openapi
- * /standalone-user-api/v1/private/users/{id}:
+ * /tp/standalone-user-api/v1/private/users/{id}:
  *   put:
  *     description: update User with existing id
  *     parameters:
@@ -170,10 +163,10 @@ addDefaultPutRoute(apiRouter,userDao,api_uris,
 
 
 
-// http://localhost:8233/standalone-user-api/v1/private/users/user1 en mode DELETE
+// http://localhost:8233/tp/standalone-user-api/v1/private/users/user1 en mode DELETE
 /**
  * @openapi
- * /standalone-user-api/v1/private/users/{id}:
+ * /tp/standalone-user-api/v1/private/users/{id}:
  *   delete:
  *     description: delete user from id (by default) or by username (if ?unique_property_name_as_id=username)
  *     parameters:

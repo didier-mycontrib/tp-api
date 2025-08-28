@@ -1,5 +1,5 @@
 //variables globales:
-var accountWsUrl="../standalone-user-api/v1/public"; //V1 only (temp)
+var accountWsUrl="../tp/standalone-user-api/v1/public"; //V1 only (temp)
 
 var zoneBodyTableau;
 var zoneUsername;

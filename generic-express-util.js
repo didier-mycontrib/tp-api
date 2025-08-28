@@ -42,16 +42,28 @@ export function build_api_uris(api_name,api_version,entities_name){
 
 
 /*
-Quelques petits points à peut être peufiner/approfondir :
-   - redirections public--->private pour Tp ou debut dev
-   - si à la fois .id et .propUnique , get /:id?unique_username_as_id
-     ex: get, put, delete /user1?unique_property_name_as_id=username
-   - et cohérence entre tout cela ?
+in prod/secure mode , public routes redirected to private route   are blocked . It's work only in dev mode 
+-----
+SOLUTION RETENUE pour le code générique "generic-express-util"
+devant fonctionner de DEV et en PROD (et en mode TP ou PAS).
+-----
+par défaut si api_uris.api ne commence pas par tp/ alors mode ordinaire strict:
+   - put,post,delete et reinit seulement en mode private
+   et 
+   - get selon choix au cas par cas (confidentiel ou pas)
+si par contre api_uris.api commence pas par tp/ alors exceptionnellement:
+   - put,post,delete et reinit accessible à la fois en mode private et en mode public
+   (double uri , alias)
+   - pour get demandé private alors accès possible à la fois en mode public et private
+
 */
 
 export function addDefaultPrivateReInitRoute(apiRouter,dao,api_uris){
 	//exemple URL: .../xyz-api/v1/private/reinit
-    apiRouter.route(`${api_uris.private_api_base_uri}/reinit`)
+	let reinit_route = `${api_uris.private_api_base_uri}/reinit`
+	if(api_uris.api_name.startsWith("tp/"))
+		reinit_route = [ reinit_route , `${api_uris.public_api_base_uri}/reinit`]
+    apiRouter.route(reinit_route)
 	.get( async function(req , res  , next ) {
 		try{
 			let doneActionMessage = await dao.reinit_db();
@@ -86,9 +98,11 @@ export function addRedirectPublicToPrivateRoute(apiRouter,publicUrl,methods){
 
 
 export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optionalTransformFn){
-	//visibility = "private" or "public"
+	//visibility = "private" or "public" 
 	//optionalTransformFn = optional transformation function to apply in found entity before send
-    const route_uri = visibility=="private"?api_uris.private_with_id_base_uri:api_uris.public_with_id_base_uri
+    let route_uri = visibility=="private"?api_uris.private_with_id_base_uri:api_uris.public_with_id_base_uri
+	if(api_uris.api_name.startsWith("tp/") && visibility=="private")
+		route_uri = [ route_uri , api_uris.public_with_id_base_uri]
 	//ex: /xyz-api/v1/private/zzzs/:id
 	apiRouter.route(route_uri)
 	.get( async function(req , res  , next ) {
@@ -124,7 +138,9 @@ export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optiona
 export function addDefaultGetByCriteriaRoute(apiRouter,dao,api_uris,visibility,criteriaExtractFn,optionalTransformFn){
 	//visibility = "private" or "public"
 	//optionalTransformFn = optional transformation function to apply in found entities before send
-    const route_uri = visibility=="private"?api_uris.private_col_base_uri:api_uris.public_col_base_uri
+    let route_uri = visibility=="private"?api_uris.private_col_base_uri:api_uris.public_col_base_uri
+	if(api_uris.api_name.startsWith("tp/") && visibility=="private")
+		route_uri = [ route_uri , api_uris.public_col_base_uri]
 	//ex: /xyz-api/v1/private/zzzs
 	apiRouter.route(route_uri)
 	.get( async function(req , res  , next ) {
@@ -145,7 +161,9 @@ export function addDefaultGetByCriteriaRoute(apiRouter,dao,api_uris,visibility,c
 //async optionalUnicityTest may be operate a unicity test and may throw execption if case of conflict
 
 export function addDefaultPostRoute(apiRouter,dao,api_uris,optionalExtractIdFn,optionalPreTransformFn,optionalUnicityTest){
-    const route_uri = api_uris.private_col_base_uri;
+    let route_uri = api_uris.private_col_base_uri;
+	if(api_uris.api_name.startsWith("tp/"))
+		route_uri = [ route_uri , api_uris.public_col_base_uri ]
 	//ex: /xyz-api/v1/private/zzzs
 	apiRouter.route(route_uri)
 	.post(async function(req , res  , next ) {
@@ -167,7 +185,9 @@ export function addDefaultPostRoute(apiRouter,dao,api_uris,optionalExtractIdFn,o
 }
 
 export function addDefaultPutRoute(apiRouter,dao,api_uris,optionalSetIdFn,optionalPreTransformFnWithIdresAndEntityToUpdate){
-	  const route_uri = api_uris.private_with_id_base_uri;
+	let route_uri = api_uris.private_with_id_base_uri;
+	if(api_uris.api_name.startsWith("tp/"))
+		route_uri = [ route_uri , api_uris.public_with_id_base_uri ]
 	//ex: /xyz-api/v1/private/zzzs/:id
 	apiRouter.route(route_uri)
 	.put(async function(req , res  , next ) {
@@ -197,6 +217,8 @@ export function addDefaultPutRoute(apiRouter,dao,api_uris,optionalSetIdFn,option
 //if optionalUniquePropertyName not null , delete by optionalUniquePropertyName (at end of path)
 export function addDefaultDeleteRoute(apiRouter,dao,api_uris){
     let route_uri = api_uris.private_with_id_base_uri;
+	if(api_uris.api_name.startsWith("tp/"))
+		route_uri = [ route_uri , api_uris.public_with_id_base_uri ]
 	//ex: /xyz-api/v1/private/zzzs/:id or /xyz-api/v1/private/zzzs/:username or :email or ..
 	apiRouter.route(route_uri)
 	.delete( async function(req , res  , next ) {
