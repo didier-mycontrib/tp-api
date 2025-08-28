@@ -18,8 +18,8 @@ export  function standaloneUserClassicSubTestGroup(){
   mainDataSetFilePath : "test/dataset/users.json" ,
   entityToAddFilePath : "test/dataset/new_user.json" ,
   entityToUpdateFilePath : "test/dataset/update_user.json" ,
-  mainPrivateURL:"/standalone-user-api/v1/private/users" ,
-  mainPublicURL:"/standalone-user-api/v1/public/users" ,
+  mainPrivateURL:"/tp/standalone-user-api/v1/private/users" ,
+  mainPublicURL:"/tp/standalone-user-api/v1/public/users" ,
   extractIdFn : (user) => user.id ,
   setIdFn: (user,id) => { user.id = id } ,
   testEssentialSameValues: (e1,e2) => {

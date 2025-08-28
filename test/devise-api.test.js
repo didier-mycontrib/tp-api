@@ -19,8 +19,8 @@ export function deviseClassicSubTestGroup(){
     mainDataSetFilePath : "test/dataset/devises.json" ,
     entityToAddFilePath : "test/dataset/new_devise.json" ,
     entityToUpdateFilePath : "test/dataset/update_devise.json" ,
-    mainPrivateURL:"/devise-api/v1/private/devises" ,
-    mainPublicURL:"/devise-api/v1/public/devises" ,
+    mainPrivateURL:"/tp/devise-api/v1/private/devises" ,
+    mainPublicURL:"/tp/devise-api/v1/public/devises" ,
     extractIdFn : (devise) => devise.code ,
     setIdFn: (devise,id) => { devise.code = id } ,
     testEssentialSameValues: (e1,e2) => {

@@ -18,8 +18,8 @@ export function productClassicSubTestGroup(){
     mainDataSetFilePath : "test/dataset/products.json" ,
     entityToAddFilePath : "test/dataset/new_product.json" ,
     entityToUpdateFilePath : "test/dataset/update_product.json" ,
-    mainPrivateURL:"/product-api/v1/private/products" ,
-    mainPublicURL:"/product-api/v1/public/products" ,
+    mainPrivateURL:"/tp/product-api/v1/private/products" ,
+    mainPublicURL:"/tp/product-api/v1/public/products" ,
     extractIdFn : (product) => product.id ,
     setIdFn: (product,id) => { product.id = id } ,
     testEssentialSameValues: (e1,e2) => {
