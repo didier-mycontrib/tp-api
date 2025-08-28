@@ -96,6 +96,26 @@ export function addRedirectPublicToPrivateRoute(apiRouter,publicUrl,methods){
 	
 }
 
+export function addRedirectPrivateToPublicRoute(apiRouter,privateUrl,methods){
+	let publicUrl = privateUrl.replace(/private/,"public")
+    publicUrl = publicUrl.replace(/:id/,"${req.params.id}")
+    let route_handler_callback_as_string = " res.redirect( 307, `" + publicUrl + "`); "; //307 for coorect post redirect
+	let route_handler_callback = Function("req","res",route_handler_callback_as_string)
+    //console.log("route_handler_callback="+route_handler_callback)
+	for(const method of methods){
+		//console.log(`addRedirectPublicToPrivateRoute publicUrl=${publicUrl} method=${method} privateUrl=${privateUrl} route_handler_callback=${route_handler_callback} `)
+     if(method=='get')
+		apiRouter.route(privateUrl).get(route_handler_callback );
+	 else if(method=='post')
+		apiRouter.route(privateUrl).post( route_handler_callback );
+	 else if(method=='put')
+		apiRouter.route(privateUrl).put( route_handler_callback);
+	 else if(method=='delete')
+		apiRouter.route(privateUrl).delete( route_handler_callback);
+   }  
+	
+}
+
 
 export function addDefaultGetByIdRoute(apiRouter,dao,api_uris,visibility,optionalTransformFn){
 	//visibility = "private" or "public" 
